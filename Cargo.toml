@@ -1,0 +1,12 @@
+[package]
+name = "len"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chumsky = "1.0.0-alpha.4"
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+tracing-test = "0.2.4"
