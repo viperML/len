@@ -6,6 +6,7 @@ with import <nixpkgs> {};
       rustfmt
       rust-analyzer-unwrapped
       clippy
+      cargo-insta
     ];
 
     RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";

@@ -6,7 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chumsky = "1.0.0-alpha.4"
+chumsky = { version = "1.0.0-alpha.4", features = [
+    "label",
+] }
+insta = "1.32.0"
+num = { version = "0.4.1", features = ["num-bigint"] }
 tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.17", features = [
+    "env-filter",
+] }
 tracing-test = "0.2.4"
+unicode-ident = "1.0.12"

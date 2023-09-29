@@ -1,0 +1,17 @@
+---
+source: src/test.rs
+expression: "lexer().parse(r#\"== !=\"#)"
+---
+ParseResult {
+    output: Some(
+        [
+            Ident(
+                "==",
+            ),
+            Ident(
+                "!=",
+            ),
+        ],
+    ),
+    errs: [],
+}

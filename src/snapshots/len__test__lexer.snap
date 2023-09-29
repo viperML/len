@@ -1,0 +1,37 @@
+---
+source: src/test.rs
+expression: "lexer().parse(r#\"1 + 2 = 1 (\"hello\" = hello)\"#)"
+---
+ParseResult {
+    output: Some(
+        [
+            Number(
+                1,
+            ),
+            Ident(
+                "+",
+            ),
+            Number(
+                2,
+            ),
+            Ident(
+                "=",
+            ),
+            Number(
+                1,
+            ),
+            LeftParenthesis,
+            String(
+                "hello",
+            ),
+            Ident(
+                "=",
+            ),
+            Ident(
+                "hello",
+            ),
+            RightParenthesis,
+        ],
+    ),
+    errs: [],
+}
