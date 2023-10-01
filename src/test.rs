@@ -23,16 +23,15 @@ fn lexer() {
     assert_debug_snapshot!(lexer().parse(r#"== !="#));
 }
 
-
 #[test]
 #[traced_test]
 fn parser() {
     use super::*;
 
-    let tokens = lexer().parse("1 + 2 * 3 + 1 == 1").into_result().unwrap();
-    assert_debug_snapshot!(parser().parse(&tokens));
-
-
-
-
+    let tokens = lexer().parse(" f 1 + 1 ").into_result().unwrap();
+    debug!(?tokens);
+    // assert_debug_snapshot!(parser().parse(&tokens));
+    let result = parser().parse(&tokens);
+    debug!("{:#?}", result);
+    todo!();
 }

@@ -1,9 +1,12 @@
 #![allow(dead_code, unused_imports)]
 
+pub mod eval;
 #[cfg(test)]
 mod test;
-pub mod eval;
 
+use std::ops::Not;
+
+use bumpalo::Bump;
 use chumsky::extra::ParserExtra;
 use chumsky::input::StrInput;
 use chumsky::text::Char;
@@ -45,6 +48,15 @@ fn unicode_ident<'a, I: StrInput<'a, C>, C: Char>() -> impl Parser<'a, I, &'a C:
     valid_ident.then(valid_ident.repeated()).slice()
 }
 
+fn is_infix(ident: &str) -> bool {
+    ident
+        .chars()
+        .next()
+        .unwrap_or_default()
+        .is_alphabetic()
+        .not()
+}
+
 pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
     let number = text::int(10).map(|s: &str| Token::Number(s.parse().unwrap()));
 
@@ -53,7 +65,6 @@ pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
         .repeated()
         .map_slice(Token::String)
         .delimited_by(just('"'), just('"'));
-
 
     let right_parens = just(')').map(|_| Token::RightParenthesis);
     let left_parens = just('(').map(|_| Token::LeftParenthesis);
@@ -75,83 +86,101 @@ pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
 #[derive(Debug)]
 pub enum Expression<'src> {
     String(&'src str),
-    Number(BigInt),
+    Number(Int),
     Boolean(bool),
     Binary {
         op: &'src str,
-        left: Box<Self>,
-        right: Box<Self>,
+        left: &'src Self,
+        right: &'src Self,
     },
+}
+
+#[derive(Debug, Clone)]
+pub enum Ast {
+    Literal(Literal),
+    FunctionCall(FunctionCall),
+    Identifier(Identifier),
+}
+
+#[derive(Debug, Clone)]
+pub enum Literal {
+    Integer(Int),
+    String(String),
+    Boolean(bool),
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionCall {
+    function: Box<Ast>,
+    argument: Box<Ast>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Identifier {
+    name: String,
 }
 
 #[derive(Debug, PartialEq)]
 pub struct Spanned2<T>(T, SimpleSpan<usize>);
 
 pub fn parser<'src>(
-) -> impl Parser<'src, &'src [Token<'src>], Expression<'src>, extra::Err<Rich<'src, Token<'src>>>> {
+) -> impl Parser<'src, &'src [Token<'src>], Ast, extra::Err<Rich<'src, Token<'src>>>> {
     recursive(|expr| {
         let literal = select! {
-            Token::Ident("true") => Expression::Boolean(true),
-            Token::Ident("false") => Expression::Boolean(false),
-            Token::Number(x) => Expression::Number(x),
-            Token::String(x) => Expression::String(x),
-        };
+            Token::Ident("true") => Literal::Boolean(true),
+            Token::Ident("false") => Literal::Boolean(false),
+            Token::Number(x) => Literal::Integer(x),
+            Token::String(x) => Literal::String(x.to_string()),
+        }
+        .map(|x| Ast::Literal(x));
+
+        let ident = select! {
+            Token::Ident(x) => x,
+        }
+        .filter(|s| is_infix(s).not())
+        .map(|s| {
+            Ast::Identifier(Identifier {
+                name: s.to_string(),
+            })
+        });
 
         let grouping = expr
             .clone()
             .delimited_by(just(Token::LeftParenthesis), just(Token::RightParenthesis));
 
-        let atom = literal.or(grouping).labelled("atom");
+        let atom = literal.or(ident).labelled("non-infix atom");
 
-        // let factor = atom
-        //     .clone()
-        //     .then(select! {
-        //         Token::Ident("*") => "*",
-        //         Token::Ident("/") => "/",
-        //     }.then(atom).repeated()).foldl(|x, y| {});
+        let func = atom.clone().foldl(atom.repeated(), |x, y| {
+            Ast::FunctionCall(FunctionCall {
+                function: Box::new(x),
+                argument: Box::new(y),
+            })
+        });
 
-        let factor = atom.clone().foldl(
-            select! {
-                Token::Ident(x @ "*") => x,
-                Token::Ident(x @ "/") => x,
-            }
-            .then(atom.clone())
-            .repeated(),
-            |lhs, (op, rhs)| Expression::Binary {
-                op,
-                left: Box::new(lhs),
-                right: Box::new(rhs),
-            },
-        );
-
-        let sum = factor.clone().foldl(
+        let sum = func.clone().foldl(
             select! {
                 Token::Ident(x @ "+") => x,
                 Token::Ident(x @ "-") => x,
             }
-            .then(factor)
+            .map(|s| {
+                Ast::Identifier(Identifier {
+                    name: s.to_string(),
+                })
+            })
+            .then(atom)
             .repeated(),
-            |lhs, (op, rhs)| Expression::Binary {
-                op,
-                left: Box::new(lhs),
-                right: Box::new(rhs),
+            |first, (op, second)| {
+                let first_op = Ast::FunctionCall(FunctionCall {
+                    function: Box::new(op),
+                    argument: Box::new(first),
+                });
+                Ast::FunctionCall(FunctionCall {
+                    function: Box::new(first_op),
+                    argument: Box::new(second),
+                })
             },
         );
 
-        let equality = sum.clone().foldl(
-            select! {
-                Token::Ident(x @ "==") => x,
-                Token::Ident(x @ "!=") => x,
-            }
-            .then(sum)
-            .repeated(),
-            |lhs, (op, rhs)| Expression::Binary {
-                op,
-                left: Box::new(lhs),
-                right: Box::new(rhs),
-            },
-        );
-
-        equality
+        sum
     })
 }

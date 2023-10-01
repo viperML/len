@@ -1,0 +1,11 @@
+---
+source: src/test.rs
+assertion_line: 32
+expression: parser().parse(&tokens)
+---
+ParseResult {
+    output: None,
+    errs: [
+        found end of input at 1..1 expected 'LeftParenthesis',
+    ],
+}

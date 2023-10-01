@@ -1,6 +1,6 @@
 use crate::Expression;
 
+pub fn eval<'src>(expr: &'src Expression) -> Expression<'src> {
 
-pub fn eval(expr: &Expression) {
-
+    todo!();
 }
