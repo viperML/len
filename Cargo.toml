@@ -10,6 +10,7 @@ bumpalo = "3.14.0"
 chumsky = { version = "1.0.0-alpha.4", features = [
     "label",
 ] }
+educe = "0.4.23"
 insta = "1.32.0"
 num = { version = "0.4.1", features = ["num-bigint"] }
 tracing = "0.1.37"

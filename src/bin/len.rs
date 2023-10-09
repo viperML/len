@@ -1,7 +1,7 @@
 use std::io::{Write, self};
 
 use chumsky::{Parser, ParseResult};
-use len::{parser, eval::eval};
+use len::{parser};
 
 
 fn main() {

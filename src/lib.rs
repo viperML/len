@@ -1,4 +1,5 @@
 #![allow(dead_code, unused_imports)]
+#[macro_use] extern crate educe;
 
 pub mod eval;
 #[cfg(test)]
