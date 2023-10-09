@@ -52,4 +52,11 @@ fn parser() {
         Token::RightParenthesis,
     ];
     assert_debug_snapshot!("1 + (2 ^^ 3)", parser().parse(&input));
+
+    let input = vec![
+        Token::Ident("map"),
+        Token::Ident("foo"),
+        Token::Ident("bar"),
+    ];
+    assert_debug_snapshot!("map foo bar", parser().parse(&input));
 }
