@@ -1,11 +1,11 @@
 use std::io::{self, Write};
 
-use chumsky::{ParseResult, Parser};
+use chumsky::Parser;
 use len::{eval::Scope, parser};
 
 fn main() {
     let mut stdout = io::stdout();
-    let mut stdin = io::stdin();
+    let stdin = io::stdin();
 
     println!("Welcome to the len repl");
 
@@ -19,11 +19,11 @@ fn main() {
         let input = buf.trim();
         println!("{}", input);
 
-        let tokens = len::lexer().parse(&input);
+        let tokens = len::lexer().parse(input);
 
         if !tokens.has_errors() {
             let tokens = tokens.output().unwrap();
-            let ast = parser().parse(&tokens);
+            let ast = parser().parse(tokens);
 
             if !ast.has_errors() {
                 let ast = ast.output().unwrap();

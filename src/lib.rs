@@ -1,5 +1,6 @@
 #![allow(dead_code, unused_imports)]
-#[macro_use] extern crate educe;
+#[macro_use]
+extern crate educe;
 
 pub mod eval;
 #[cfg(test)]
@@ -70,7 +71,7 @@ pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
     let right_parens = just(')').map(|_| Token::RightParenthesis);
     let left_parens = just('(').map(|_| Token::LeftParenthesis);
 
-    let ident = unicode_ident().map_slice(|s| Token::Ident(s));
+    let ident = unicode_ident().map_slice(Token::Ident);
 
     number
         .or(string)
@@ -133,7 +134,7 @@ pub fn parser<'src>(
             Token::Number(x) => Literal::Integer(x),
             Token::String(x) => Literal::String(x.to_string()),
         }
-        .map(|x| Ast::Literal(x));
+        .map(Ast::Literal);
 
         let ident = select! {
             Token::Ident(x) => x,
@@ -145,20 +146,20 @@ pub fn parser<'src>(
             })
         });
 
-        let grouping = expr
+        let _grouping = expr
             .clone()
             .delimited_by(just(Token::LeftParenthesis), just(Token::RightParenthesis));
 
         let atom = literal.or(ident).labelled("non-infix atom");
 
-        let func = atom.clone().foldl(atom.repeated(), |x, y| {
+        let func = atom.foldl(atom.repeated(), |x, y| {
             Ast::FunctionCall(FunctionCall {
                 function: Box::new(x),
                 argument: Box::new(y),
             })
         });
 
-        let sum = func.clone().foldl(
+        func.foldl(
             select! {
                 Token::Ident(x @ "+") => x,
                 Token::Ident(x @ "-") => x,
@@ -180,8 +181,6 @@ pub fn parser<'src>(
                     argument: Box::new(second),
                 })
             },
-        );
-
-        sum
+        )
     })
 }

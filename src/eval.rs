@@ -39,8 +39,7 @@ impl<'o> Object<'o> {
         Object(From::from(ObjectRaw::Int(int.into())))
     }
 
-    fn new_string(input: String) -> Self
-    {
+    fn new_string(input: String) -> Self {
         Object(From::from(ObjectRaw::String(input)))
     }
 }
@@ -141,8 +140,8 @@ where
         },
         Ast::Identifier(ident) => Ok(scope.symbol_lookup(&ident.name)),
         Ast::FunctionCall(call) => {
-            let function = eval(*call.function, &scope).unwrap();
-            let argument = eval(*call.argument, &scope).unwrap();
+            let function = eval(*call.function, scope).unwrap();
+            let argument = eval(*call.argument, scope).unwrap();
             match *function {
                 ObjectRaw::Function(ref f) => {
                     let result = (f.value)(argument);
