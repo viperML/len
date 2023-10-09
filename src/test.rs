@@ -55,8 +55,11 @@ fn parser() {
 
     let input = vec![
         Token::Ident("map"),
-        Token::Ident("foo"),
+        Token::LeftParenthesis,
+        Token::Ident("x"),
+        Token::Ident("y"),
+        Token::RightParenthesis,
         Token::Ident("bar"),
     ];
-    assert_debug_snapshot!("map foo bar", parser().parse(&input));
+    assert_debug_snapshot!("map (x y) bar", parser().parse(&input));
 }
