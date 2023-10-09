@@ -1,8 +1,7 @@
-use std::io::{Write, self};
+use std::io::{self, Write};
 
-use chumsky::{Parser, ParseResult};
-use len::{parser};
-
+use chumsky::{ParseResult, Parser};
+use len::{eval::Scope, parser};
 
 fn main() {
     let mut stdout = io::stdout();
@@ -22,17 +21,17 @@ fn main() {
 
         let tokens = len::lexer().parse(&input);
 
-        if ! tokens.has_errors() {
+        if !tokens.has_errors() {
             let tokens = tokens.output().unwrap();
             let ast = parser().parse(&tokens);
 
             if !ast.has_errors() {
                 let ast = ast.output().unwrap();
-                println!("{:#?}", ast);
+                // println!("{:#?}", ast);
 
-
-
-
+                let scope = Scope::std();
+                let res = len::eval::eval(ast.clone(), &scope);
+                println!("{:#?}", res);
             } else {
                 println!("{:#?}", ast);
             }

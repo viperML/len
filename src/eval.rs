@@ -12,7 +12,7 @@ use std::{
 use crate::Expression;
 
 #[derive(Debug, Clone)]
-struct Object<'o>(Rc<ObjectRaw<'o>>);
+pub struct Object<'o>(Rc<ObjectRaw<'o>>);
 
 impl<'o> Deref for Object<'o> {
     type Target = ObjectRaw<'o>;
@@ -38,10 +38,15 @@ impl<'o> Object<'o> {
     {
         Object(From::from(ObjectRaw::Int(int.into())))
     }
+
+    fn new_string(input: String) -> Self
+    {
+        Object(From::from(ObjectRaw::String(input)))
+    }
 }
 
 #[derive(Debug)]
-enum ObjectRaw<'o> {
+pub enum ObjectRaw<'o> {
     Int(Int),
     String(String),
     Function(Function<'o>),
@@ -49,7 +54,7 @@ enum ObjectRaw<'o> {
 
 #[derive(Educe)]
 #[educe(Debug)]
-struct Function<'f> {
+pub struct Function<'f> {
     #[educe(Debug(ignore))]
     value: Box<dyn Fn(Object) -> Object + 'f>,
 }
@@ -81,7 +86,7 @@ fn test_eval<'src>() {
 }
 
 #[derive(Debug, Clone)]
-enum EvalError {
+pub enum EvalError {
     TypeError,
     Todo,
 }
@@ -97,9 +102,22 @@ impl Error for EvalError {}
 type EvalResult<T> = Result<T, EvalError>;
 
 #[derive(Debug)]
-struct Scope<'scope, 'o> {
+pub struct Scope<'scope, 'o> {
     parent: Option<&'scope Self>,
     bindings: HashMap<String, Object<'o>>,
+}
+
+impl<'scope, 'o> Scope<'scope, 'o> {
+    pub fn std() -> Self {
+        let mut bindings = HashMap::new();
+        let func_id = Object::new_function(|x| x);
+        bindings.insert(String::from("id"), func_id);
+
+        Self {
+            parent: None,
+            bindings,
+        }
+    }
 }
 
 impl<'scope, 'o> Scope<'scope, 'o> {
@@ -111,13 +129,14 @@ impl<'scope, 'o> Scope<'scope, 'o> {
     }
 }
 
-fn eval<'scope, 'o>(node: Ast, scope: &'scope Scope) -> EvalResult<Object<'o>>
+pub fn eval<'scope, 'o>(ast: Ast, scope: &'scope Scope) -> EvalResult<Object<'o>>
 where
     'scope: 'o,
 {
-    match node {
+    match ast {
         Ast::Literal(lit) => match lit {
             Literal::Integer(x) => Ok(Object::new_int(x)),
+            Literal::String(x) => Ok(Object::new_string(x)),
             _ => Err(EvalError::Todo),
         },
         Ast::Identifier(ident) => Ok(scope.symbol_lookup(&ident.name)),
