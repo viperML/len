@@ -112,6 +112,15 @@ impl<'scope, 'o> Scope<'scope, 'o> {
         let func_id = Object::new_function(|x| x);
         bindings.insert(String::from("id"), func_id);
 
+        let func_sum = Object::new_function(|x| {
+            let x = x.clone();
+            Object::new_function(move |y| match (&*x, &*y) {
+                (ObjectRaw::Int(x), ObjectRaw::Int(y)) => Object::new_int(x + y),
+                _ => todo!(),
+            })
+        });
+        bindings.insert(String::from("+"), func_sum);
+
         Self {
             parent: None,
             bindings,
