@@ -146,13 +146,13 @@ pub fn parser<'src>(
             })
         });
 
-        let _grouping = expr
+        let grouping = expr
             .clone()
             .delimited_by(just(Token::LeftParenthesis), just(Token::RightParenthesis));
 
-        let atom = literal.or(ident).labelled("non-infix atom");
+        let atom = literal.or(ident).or(grouping).labelled("non-infix atom");
 
-        let func = atom.foldl(atom.repeated(), |x, y| {
+        let func = atom.clone().foldl(atom.clone().repeated(), |x, y| {
             Ast::FunctionCall(FunctionCall {
                 function: Box::new(x),
                 argument: Box::new(y),
@@ -161,14 +161,18 @@ pub fn parser<'src>(
 
         func.foldl(
             select! {
-                Token::Ident(x @ "+") => x,
-                Token::Ident(x @ "-") => x,
+                Token::Ident(s) => {
+                    if is_infix(s) {
+                        Some( Ast::Identifier(Identifier {
+                            name: s.to_string(),
+                        }))
+                    } else {
+                        None
+                    }
+                },
             }
-            .map(|s| {
-                Ast::Identifier(Identifier {
-                    name: s.to_string(),
-                })
-            })
+            .filter(|ast| ast.is_some())
+            .map(|ast| ast.unwrap())
             .then(atom)
             .repeated(),
             |first, (op, second)| {

@@ -1,0 +1,50 @@
+---
+source: src/test.rs
+expression: parser().parse(&input)
+---
+ParseResult {
+    output: Some(
+        FunctionCall(
+            FunctionCall {
+                function: FunctionCall(
+                    FunctionCall {
+                        function: Identifier(
+                            Identifier {
+                                name: "+",
+                            },
+                        ),
+                        argument: Literal(
+                            Integer(
+                                1,
+                            ),
+                        ),
+                    },
+                ),
+                argument: FunctionCall(
+                    FunctionCall {
+                        function: FunctionCall(
+                            FunctionCall {
+                                function: Identifier(
+                                    Identifier {
+                                        name: "^^",
+                                    },
+                                ),
+                                argument: Literal(
+                                    Integer(
+                                        2,
+                                    ),
+                                ),
+                            },
+                        ),
+                        argument: Literal(
+                            Integer(
+                                3,
+                            ),
+                        ),
+                    },
+                ),
+            },
+        ),
+    ),
+    errs: [],
+}

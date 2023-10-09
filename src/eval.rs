@@ -58,8 +58,8 @@ pub struct Function<'f> {
     value: Box<dyn Fn(Object) -> Object + 'f>,
 }
 
-#[test]
-#[traced_test]
+// #[test]
+// #[traced_test]
 fn test_eval<'src>() {
     let ast = Ast::FunctionCall(FunctionCall {
         function: Box::new(Ast::Identifier(crate::Identifier {

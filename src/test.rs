@@ -34,4 +34,22 @@ fn parser() {
     let result = parser().parse(&tokens);
     debug!("{:#?}", result);
     // todo!();
+
+    let input = vec![
+        Token::Number(1.into()),
+        Token::Ident("+"),
+        Token::Number(2.into()),
+    ];
+    assert_debug_snapshot!("1 + 2", parser().parse(&input));
+
+    let input = vec![
+        Token::Number(1.into()),
+        Token::Ident("+"),
+        Token::LeftParenthesis,
+        Token::Number(2.into()),
+        Token::Ident("^^"),
+        Token::Number(3.into()),
+        Token::RightParenthesis,
+    ];
+    assert_debug_snapshot!("1 + (2 ^^ 3)", parser().parse(&input));
 }
