@@ -4,5 +4,6 @@ default:
     @just -l
 
 doc:
-    cargo doc
-    echo '<meta http-equiv=refresh content=0;url=YOURLIBNAME/index.html>' > target/doc/index.html
+    cargo clean --doc
+    cargo doc --verbose --no-deps
+    echo '<meta http-equiv=refresh content=0;url=len/index.html>' > target/doc/index.html
