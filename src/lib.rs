@@ -48,7 +48,7 @@ fn unicode_ident<'a, I: StrInput<'a, C>, C: Char>() -> impl Parser<'a, I, &'a C:
     let valid_ident =
         any().filter(|c: &C| !c.to_char().is_whitespace() && !is_reserved_char(&c.to_char()));
 
-    valid_ident.then(valid_ident.repeated()).slice()
+    valid_ident.then(valid_ident.repeated()).to_slice()
 }
 
 fn is_infix(ident: &str) -> bool {
@@ -66,13 +66,14 @@ pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
     let string = any()
         .filter(|c| *c != '"')
         .repeated()
-        .map_slice(Token::String)
+        .to_slice()
+        .map(Token::String)
         .delimited_by(just('"'), just('"'));
 
     let right_parens = just(')').map(|_| Token::RightParenthesis);
     let left_parens = just('(').map(|_| Token::LeftParenthesis);
 
-    let ident = unicode_ident().map_slice(Token::Ident);
+    let ident = unicode_ident().to_slice().map(Token::Ident);
 
     number
         .or(string)
