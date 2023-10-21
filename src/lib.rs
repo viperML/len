@@ -3,6 +3,7 @@
 extern crate educe;
 
 pub mod eval;
+pub mod lexer;
 #[cfg(test)]
 mod test;
 mod ty;
@@ -14,81 +15,9 @@ use chumsky::text::Char;
 
 use chumsky::Parser;
 use chumsky::{input::ValueInput, prelude::*};
+use lexer::Token;
 
-type Int = num::BigInt;
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Token<'src> {
-    Number(Int),
-    Bind,
-    String(&'src str),
-    Ident(&'src str),
-    RightParenthesis,
-    LeftParenthesis,
-}
-
-type Span = SimpleSpan;
-type Spanned<T> = (T, Span);
-
-fn is_reserved_char(c: &char) -> bool {
-    r#"(),;[]`{}_:"'"#.chars().any(|reserved| reserved == c.to_char())
-}
-
-fn unicode_ident<'a, I: StrInput<'a, C>, C: Char>() -> impl Parser<'a, I, &'a C::Str> + Copy + Clone
-{
-    let valid_ident =
-        any().filter(|c: &C| !c.to_char().is_whitespace() && !is_reserved_char(&c.to_char()));
-
-    valid_ident.then(valid_ident.repeated()).to_slice()
-}
-
-fn is_infix(ident: &str) -> bool {
-    ident
-        .chars()
-        .next()
-        .unwrap_or_default()
-        .is_alphabetic()
-        .not()
-}
-
-pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
-    let number = text::int(10).map(|s: &str| Token::Number(s.parse().unwrap()));
-
-    let string = any()
-        .filter(|c| *c != '"')
-        .repeated()
-        .to_slice()
-        .map(Token::String)
-        .delimited_by(just('"'), just('"'));
-
-    let right_parens = just(')').map(|_| Token::RightParenthesis);
-    let left_parens = just('(').map(|_| Token::LeftParenthesis);
-
-    let ident = unicode_ident().to_slice().map(Token::Ident);
-
-    number
-        .or(string)
-        .or(right_parens)
-        .or(left_parens)
-        .or(ident)
-        // .map_with_span(|token, span| (token, span))
-        .padded()
-        .repeated()
-        .collect()
-}
-
-#[allow(dead_code)]
-#[derive(Debug)]
-pub enum Expression<'src> {
-    String(&'src str),
-    Number(Int),
-    Boolean(bool),
-    Binary {
-        op: &'src str,
-        left: &'src Self,
-        right: &'src Self,
-    },
-}
+pub type Int = num::BigInt;
 
 #[derive(Debug, Clone)]
 pub enum Ast {
@@ -117,6 +46,15 @@ pub struct Identifier {
 
 #[derive(Debug, PartialEq)]
 pub struct Spanned2<T>(T, SimpleSpan<usize>);
+
+fn is_infix(ident: &str) -> bool {
+    ident
+        .chars()
+        .next()
+        .unwrap_or_default()
+        .is_alphabetic()
+        .not()
+}
 
 pub fn parser<'src>(
 ) -> impl Parser<'src, &'src [Token<'src>], Ast, extra::Err<Rich<'src, Token<'src>>>> {

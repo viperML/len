@@ -19,7 +19,7 @@ fn main() {
         let input = buf.trim();
         println!("{}", input);
 
-        let tokens = len::lexer().parse(input);
+        let tokens = len::lexer::lexer().parse(input);
 
         if !tokens.has_errors() {
             let tokens = tokens.output().unwrap();
