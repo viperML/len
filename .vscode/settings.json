@@ -2,5 +2,6 @@
     "editor.inlayHints.enabled": "offUnlessPressed",
     "files.watcherExclude": {
         "**/target": true
-    }
+    },
+    "rust-analyzer.showUnlinkedFileNotification": false
 }

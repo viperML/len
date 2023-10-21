@@ -5,6 +5,7 @@ extern crate educe;
 pub mod eval;
 #[cfg(test)]
 mod test;
+mod ty;
 
 use std::ops::Not;
 
