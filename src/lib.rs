@@ -1,4 +1,4 @@
-#![allow(dead_code, unused_imports)]
+// #![allow(dead_code, unused_imports)]
 #[macro_use]
 extern crate educe;
 
@@ -9,20 +9,11 @@ mod ty;
 
 use std::ops::Not;
 
-use bumpalo::Bump;
-use chumsky::extra::ParserExtra;
 use chumsky::input::StrInput;
 use chumsky::text::Char;
-use chumsky::util::MaybeRef;
+
 use chumsky::Parser;
-use chumsky::{
-    combinator::To,
-    input::{Stream, ValueInput},
-    prelude::*,
-};
-use num::BigInt;
-use tracing::{debug, info};
-use tracing_test::traced_test;
+use chumsky::{input::ValueInput, prelude::*};
 
 type Int = num::BigInt;
 

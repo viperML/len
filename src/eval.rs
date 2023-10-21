@@ -1,15 +1,9 @@
-use chumsky::primitive::todo;
 use tracing::debug;
-use tracing_test::traced_test;
 
 use crate::{Ast, FunctionCall, Int, Literal};
-use core::panic;
-use std::ops::Deref;
-use std::{
-    collections::HashMap, error::Error, fmt::Display, marker::PhantomData, rc::Rc, sync::Arc,
-};
 
-use crate::Expression;
+use std::ops::Deref;
+use std::{collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct Object<'o>(Rc<ObjectRaw<'o>>);
