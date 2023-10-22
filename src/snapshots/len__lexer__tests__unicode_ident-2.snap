@@ -1,5 +1,5 @@
 ---
-source: src/test.rs
+source: src/lexer.rs
 expression: "unicode_ident().padded().parse(\" abc \")"
 ---
 ParseResult {

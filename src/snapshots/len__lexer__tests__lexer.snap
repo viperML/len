@@ -1,5 +1,5 @@
 ---
-source: src/test.rs
+source: src/lexer.rs
 expression: "lexer().parse(r#\"1 + 2 = 1 (\"hello\" = hello)\"#)"
 ---
 ParseResult {

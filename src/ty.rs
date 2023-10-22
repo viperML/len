@@ -1,8 +1,5 @@
 use std::collections::HashMap;
 
-use tracing::debug;
-use tracing_test::traced_test;
-
 #[derive(Debug)]
 enum Ty {
     Product(HashMap<String, Option<Self>>),
@@ -16,21 +13,28 @@ enum Primitive {
     Int,
 }
 
-#[test]
-#[traced_test]
-fn test_ty() {
-    let x = Ty::Primitive(Primitive::Int);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tracing::debug;
+    use tracing_test::traced_test;
 
-    let y = Ty::Product(From::from([
-        // ..
-        (String::from("foo"), Some(Ty::Primitive(Primitive::String))),
-    ]));
+    // #[test]
+    // #[traced_test]
+    fn test_ty() {
+        let x = Ty::Primitive(Primitive::Int);
 
-    let maybe_s = Ty::Sum(From::from([
-        (String::from("Some"), Some(Ty::Primitive(Primitive::Int))),
-        (String::from("None"), None),
-    ]));
+        let y = Ty::Product(From::from([
+            // ..
+            (String::from("foo"), Some(Ty::Primitive(Primitive::String))),
+        ]));
 
-    debug!(?x, ?y);
-    todo!();
+        let maybe_s = Ty::Sum(From::from([
+            (String::from("Some"), Some(Ty::Primitive(Primitive::Int))),
+            (String::from("None"), None),
+        ]));
+
+        debug!(?x, ?y);
+        todo!();
+    }
 }

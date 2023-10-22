@@ -1,6 +1,6 @@
 ---
-source: src/test.rs
-expression: "unicode_ident().padded().parse(\" ( ) \")"
+source: src/lexer.rs
+expression: "unicode_ident().parse(\" \")"
 ---
 ParseResult {
     output: None,

@@ -1,5 +1,3 @@
-use tracing::debug;
-
 use crate::{Ast, FunctionCall, Int, Literal};
 
 use std::ops::Deref;
@@ -63,32 +61,6 @@ impl std::fmt::Debug for Function {
         write!(f, "function@{:p}", self.value)
         // f.debug_struct("Function").field("value", &self.value).finish()
     }
-}
-
-// #[test]
-// #[traced_test]
-fn test_eval<'src>() {
-    let ast = Ast::FunctionCall(FunctionCall {
-        function: Box::new(Ast::Identifier(crate::Identifier {
-            name: String::from("id"),
-        })),
-        argument: Box::new(Ast::Literal(Literal::Integer(1.into()))),
-    });
-
-    let mut bindings = HashMap::new();
-
-    let func_id = Object::new_function(|x| x);
-    bindings.insert(String::from("id"), func_id);
-
-    let root_scope = Scope {
-        parent: None,
-        bindings,
-    };
-
-    let res = eval(ast, &root_scope);
-    debug!(?res);
-
-    todo!();
 }
 
 #[derive(Debug, Clone)]
@@ -178,5 +150,37 @@ pub fn eval(ast: Ast, scope: &Scope) -> EvalResult<Object> {
                 _ => Err(EvalError::TypeError),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tracing::debug;
+
+    // #[test]
+    // #[traced_test]
+    fn test_eval<'src>() {
+        let ast = Ast::FunctionCall(FunctionCall {
+            function: Box::new(Ast::Identifier(crate::Identifier {
+                name: String::from("id"),
+            })),
+            argument: Box::new(Ast::Literal(Literal::Integer(1.into()))),
+        });
+
+        let mut bindings = HashMap::new();
+
+        let func_id = Object::new_function(|x| x);
+        bindings.insert(String::from("id"), func_id);
+
+        let root_scope = Scope {
+            parent: None,
+            bindings,
+        };
+
+        let res = eval(ast, &root_scope);
+        debug!(?res);
+
+        todo!();
     }
 }
