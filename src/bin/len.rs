@@ -30,8 +30,8 @@ fn main() {
                 // println!("{:#?}", ast);
 
                 let scope = Scope::std();
-                let res = len::eval::eval(ast.clone(), &scope);
-                println!("{:#?}", res);
+                // let res = len::eval::eval(ast.clone(), &scope);
+                // println!("{:#?}", res);
             } else {
                 println!("{:#?}", ast);
             }

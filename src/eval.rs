@@ -6,50 +6,59 @@ use std::ops::Deref;
 use std::{collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone)]
-pub struct Object<'o>(Rc<ObjectRaw<'o>>);
+pub struct Object {
+    ptr: Rc<ObjectRaw>,
+}
 
-impl<'o> Deref for Object<'o> {
-    type Target = ObjectRaw<'o>;
+impl Deref for Object {
+    type Target = ObjectRaw;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.ptr
     }
 }
 
-impl<'o> Object<'o> {
+impl Object {
     fn new_function<F>(func: F) -> Self
     where
-        F: Fn(Object) -> Object + 'o,
+        F: Fn(Object) -> Object,
     {
-        Object(From::from(ObjectRaw::Function(Function {
-            value: Box::new(func),
-        })))
+        Object {
+            ptr: From::from(ObjectRaw::Function(Function {
+                value: Box::new(func),
+            })),
+        }
     }
 
     fn new_int<I>(int: I) -> Self
     where
         I: Into<Int>,
     {
-        Object(From::from(ObjectRaw::Int(int.into())))
+        Object {
+            ptr: From::from(ObjectRaw::Int(int.into())),
+        }
     }
 
     fn new_string(input: String) -> Self {
-        Object(From::from(ObjectRaw::String(input)))
+        Object {
+            ptr: From::from(ObjectRaw::String(input)),
+        }
     }
 }
 
 #[derive(Debug)]
-pub enum ObjectRaw<'o> {
+pub enum ObjectRaw {
     Int(Int),
     String(String),
-    Function(Function<'o>),
+    Function(Function),
+    Product(HashMap<String, Object>),
 }
 
 #[derive(Educe)]
 #[educe(Debug)]
-pub struct Function<'f> {
+pub struct Function {
     #[educe(Debug(ignore))]
-    value: Box<dyn Fn(Object) -> Object + 'f>,
+    value: Box<dyn Fn(Object) -> Object>,
 }
 
 // #[test]
@@ -68,7 +77,7 @@ fn test_eval<'src>() {
     bindings.insert(String::from("id"), func_id);
 
     let root_scope = Scope {
-        parent: None,
+        // parent: None,
         bindings,
     };
 
@@ -95,35 +104,51 @@ impl Error for EvalError {}
 type EvalResult<T> = Result<T, EvalError>;
 
 #[derive(Debug)]
-pub struct Scope<'scope, 'o> {
-    parent: Option<&'scope Self>,
-    bindings: HashMap<String, Object<'o>>,
+pub struct Scope {
+    // parent: Option<&'scope Self>,
+    bindings: HashMap<String, Object>,
 }
 
-impl<'scope, 'o> Scope<'scope, 'o> {
+impl Scope {
     pub fn std() -> Self {
         let mut bindings = HashMap::new();
         let func_id = Object::new_function(|x| x);
-        bindings.insert(String::from("id"), func_id);
 
-        let func_sum = Object::new_function(|x| {
-            let x = x.clone();
-            Object::new_function(move |y| match (&*x, &*y) {
-                (ObjectRaw::Int(x), ObjectRaw::Int(y)) => Object::new_int(x + y),
-                _ => todo!(),
-            })
-        });
-        bindings.insert(String::from("+"), func_sum);
+
+        bindings.insert(
+            String::from("+"),
+            Object::new_function(|x| {
+                let x = x.clone();
+                Object::new_function(move |y| match (&*x, &*y) {
+
+                    _ => todo!(),
+                })
+            }),
+        );
+
+        bindings.insert(
+            String::from("get"),
+            Object::new_function(|left| {
+                let left = left.clone();
+                Object::new_function(move |right| match (&*left, &*right) {
+                    (ObjectRaw::Product(p), ObjectRaw::String(s)) => {
+                        p.get(s).expect("Failed to get element").clone()
+                    }
+                    _ => todo!(),
+                })
+            }),
+        );
 
         Self {
-            parent: None,
+            // parent: None,
             bindings,
         }
     }
 }
 
-impl<'scope, 'o> Scope<'scope, 'o> {
-    fn symbol_lookup<S: AsRef<str>>(&'scope self, symbol: S) -> Object {
+impl Scope
+{
+    fn symbol_lookup<S: AsRef<str>>(&self, symbol: S) -> Object {
         self.bindings
             .get(&symbol.as_ref().to_string())
             .unwrap()
@@ -131,9 +156,7 @@ impl<'scope, 'o> Scope<'scope, 'o> {
     }
 }
 
-pub fn eval<'scope, 'o>(ast: Ast, scope: &'scope Scope) -> EvalResult<Object<'o>>
-where
-    'scope: 'o,
+pub fn eval(ast: Ast, scope: &Scope) -> EvalResult<Object>
 {
     match ast {
         Ast::Literal(lit) => match lit {
