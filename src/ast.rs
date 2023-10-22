@@ -4,7 +4,7 @@ use chumsky::input::StrInput;
 use chumsky::pratt::{infix, left, prefix};
 use chumsky::text::Char;
 
-use crate::lexer::Token;
+use crate::lexer::TokenKind;
 use crate::Int;
 use chumsky::Parser;
 use chumsky::{input::ValueInput, prelude::*};
@@ -47,18 +47,18 @@ fn is_infix(ident: &str) -> bool {
 }
 
 pub fn expression_parser_old<'src>(
-) -> impl Parser<'src, &'src [Token<'src>], Ast, extra::Err<Rich<'src, Token<'src>>>> {
+) -> impl Parser<'src, &'src [TokenKind<'src>], Ast, extra::Err<Rich<'src, TokenKind<'src>>>> {
     recursive(|expr| {
         let literal = select! {
-            Token::Ident("true") => Literal::Boolean(true),
-            Token::Ident("false") => Literal::Boolean(false),
-            Token::Number(x) => Literal::Integer(x),
-            Token::String(x) => Literal::String(x.to_string()),
+            TokenKind::Ident("true") => Literal::Boolean(true),
+            TokenKind::Ident("false") => Literal::Boolean(false),
+            TokenKind::Number(x) => Literal::Integer(x),
+            TokenKind::String(x) => Literal::String(x.to_string()),
         }
         .map(Ast::Literal);
 
         let ident = select! {
-            Token::Ident(x) => x,
+            TokenKind::Ident(x) => x,
         }
         .filter(|s| is_infix(s).not())
         .map(|s| {
@@ -69,7 +69,7 @@ pub fn expression_parser_old<'src>(
 
         let grouping = expr
             .clone()
-            .delimited_by(just(Token::LeftParenthesis), just(Token::RightParenthesis));
+            .delimited_by(just(TokenKind::LeftParenthesis), just(TokenKind::RightParenthesis));
 
         let atom = literal.or(ident).or(grouping).labelled("non-infix atom");
 
@@ -82,7 +82,7 @@ pub fn expression_parser_old<'src>(
 
         func.foldl(
             select! {
-                Token::Ident(s) => {
+                TokenKind::Ident(s) => {
                     if is_infix(s) {
                         Some( Ast::Identifier(Identifier {
                             name: s.to_string(),
@@ -111,18 +111,18 @@ pub fn expression_parser_old<'src>(
 }
 
 pub fn expression_parser<'src>(
-) -> impl Parser<'src, &'src [Token<'src>], Ast, extra::Err<Rich<'src, Token<'src>>>> {
+) -> impl Parser<'src, &'src [TokenKind<'src>], Ast, extra::Err<Rich<'src, TokenKind<'src>>>> {
     let atom = recursive(|expr| {
         let literal = select! {
-            Token::Ident("true") => Literal::Boolean(true),
-            Token::Ident("false") => Literal::Boolean(false),
-            Token::Number(x) => Literal::Integer(x),
-            Token::String(x) => Literal::String(x.to_string()),
+            TokenKind::Ident("true") => Literal::Boolean(true),
+            TokenKind::Ident("false") => Literal::Boolean(false),
+            TokenKind::Number(x) => Literal::Integer(x),
+            TokenKind::String(x) => Literal::String(x.to_string()),
         }
         .map(Ast::Literal);
 
         let ident = select! {
-            Token::Ident(x) => x,
+            TokenKind::Ident(x) => x,
         }
         .filter(|s| is_infix(s).not())
         .map(|s| {
@@ -133,13 +133,13 @@ pub fn expression_parser<'src>(
 
         let grouping = expr
             .clone()
-            .delimited_by(just(Token::LeftParenthesis), just(Token::RightParenthesis));
+            .delimited_by(just(TokenKind::LeftParenthesis), just(TokenKind::RightParenthesis));
 
         literal.or(ident).or(grouping).labelled("non-infix atom")
     });
 
     let infix_ident = select! {
-        Token::Ident(s) => {
+        TokenKind::Ident(s) => {
             if is_infix(s) {
                 Some( Ast::Identifier(Identifier {
                     name: s.to_string(),

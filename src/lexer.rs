@@ -1,20 +1,29 @@
 use std::ops::Not;
 
+use chumsky::error::Rich;
+use chumsky::extra::ParserExtra;
 use chumsky::input::StrInput;
+use chumsky::span::Span;
 use chumsky::text::Char;
 
 use crate::Int;
-use chumsky::Parser;
+use chumsky::{extra, Parser};
 use chumsky::{input::ValueInput, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Token<'src> {
+pub enum TokenKind<'src> {
     Number(Int),
     Bind,
     String(&'src str),
     Ident(&'src str),
     RightParenthesis,
     LeftParenthesis,
+}
+
+#[derive(Debug)]
+pub struct Token<'src> {
+    kind: TokenKind<'src>,
+    span: SimpleSpan,
 }
 
 fn is_reserved_char(c: &char) -> bool {
@@ -29,20 +38,49 @@ fn unicode_ident<'a, I: StrInput<'a, C>, C: Char>() -> impl Parser<'a, I, &'a C:
     valid_ident.then(valid_ident.repeated()).to_slice()
 }
 
-pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
-    let number = text::int(10).map(|s: &str| Token::Number(s.parse().unwrap()));
+pub fn lexer2<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
+    let number = text::int(10).map(|s: &str| TokenKind::Number(s.parse().unwrap()));
 
     let string = any()
         .filter(|c| *c != '"')
         .repeated()
         .to_slice()
-        .map(Token::String)
+        .map(TokenKind::String)
         .delimited_by(just('"'), just('"'));
 
-    let right_parens = just(')').map(|_| Token::RightParenthesis);
-    let left_parens = just('(').map(|_| Token::LeftParenthesis);
+    let right_parens = just(')').map(|_| TokenKind::RightParenthesis);
+    let left_parens = just('(').map(|_| TokenKind::LeftParenthesis);
 
-    let ident = unicode_ident().to_slice().map(Token::Ident);
+    let ident = unicode_ident().to_slice().map(TokenKind::Ident);
+
+    number
+        .or(string)
+        .or(right_parens)
+        .or(left_parens)
+        .or(ident)
+        .map_with(|t: TokenKind, e| Token {
+            kind: t,
+            span: e.span(),
+        })
+        .padded()
+        .repeated()
+        .collect()
+}
+
+pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<TokenKind<'src>>> {
+    let number = text::int(10).map(|s: &str| TokenKind::Number(s.parse().unwrap()));
+
+    let string = any()
+        .filter(|c| *c != '"')
+        .repeated()
+        .to_slice()
+        .map(TokenKind::String)
+        .delimited_by(just('"'), just('"'));
+
+    let right_parens = just(')').map(|_| TokenKind::RightParenthesis);
+    let left_parens = just('(').map(|_| TokenKind::LeftParenthesis);
+
+    let ident = unicode_ident().to_slice().map(TokenKind::Ident);
 
     number
         .or(string)
@@ -59,6 +97,7 @@ pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
 mod tests {
     use super::*;
     use insta::assert_debug_snapshot;
+    use tracing::debug;
     use tracing_test::traced_test;
 
     #[test]
@@ -75,6 +114,16 @@ mod tests {
     fn test_lexer() {
         assert_debug_snapshot!(lexer().parse(r#"1 + 2 = 1 ("hello" = hello)"#));
         assert_debug_snapshot!(lexer().parse(r#"== !="#));
+    }
+
+    #[test]
+    #[traced_test]
+    fn test_lexer2() {
+        let input = "hello {{";
+
+        let res = lexer2().parse(input);
+        debug!("{:#?}", res);
+        todo!();
     }
 
     // #[test]
