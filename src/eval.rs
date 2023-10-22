@@ -21,11 +21,11 @@ impl Deref for Object {
 impl Object {
     fn new_function<F>(func: F) -> Self
     where
-        F: Fn(Object) -> Object,
+        F: Fn(Object) -> Object + 'static,
     {
         Object {
             ptr: From::from(ObjectRaw::Function(Function {
-                value: Box::new(func),
+                value: Rc::new(func),
             })),
         }
     }
@@ -54,11 +54,15 @@ pub enum ObjectRaw {
     Product(HashMap<String, Object>),
 }
 
-#[derive(Educe)]
-#[educe(Debug)]
 pub struct Function {
-    #[educe(Debug(ignore))]
-    value: Box<dyn Fn(Object) -> Object>,
+    value: Rc<dyn Fn(Object) -> Object>,
+}
+
+impl std::fmt::Debug for Function {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "function@{:p}", self.value)
+        // f.debug_struct("Function").field("value", &self.value).finish()
+    }
 }
 
 // #[test]
@@ -77,7 +81,7 @@ fn test_eval<'src>() {
     bindings.insert(String::from("id"), func_id);
 
     let root_scope = Scope {
-        // parent: None,
+        parent: None,
         bindings,
     };
 
@@ -104,23 +108,23 @@ impl Error for EvalError {}
 type EvalResult<T> = Result<T, EvalError>;
 
 #[derive(Debug)]
-pub struct Scope {
-    // parent: Option<&'scope Self>,
+pub struct Scope<'parent> {
+    parent: Option<&'parent Self>,
     bindings: HashMap<String, Object>,
 }
 
-impl Scope {
+impl<'parent> Scope<'parent> {
     pub fn std() -> Self {
         let mut bindings = HashMap::new();
-        let func_id = Object::new_function(|x| x);
 
+        bindings.insert(String::from("id"), Object::new_function(|x| x));
 
         bindings.insert(
             String::from("+"),
             Object::new_function(|x| {
                 let x = x.clone();
                 Object::new_function(move |y| match (&*x, &*y) {
-
+                    (ObjectRaw::Int(a), ObjectRaw::Int(b)) => Object::new_int(a + b),
                     _ => todo!(),
                 })
             }),
@@ -140,14 +144,13 @@ impl Scope {
         );
 
         Self {
-            // parent: None,
+            parent: None,
             bindings,
         }
     }
 }
 
-impl Scope
-{
+impl<'parent> Scope<'parent> {
     fn symbol_lookup<S: AsRef<str>>(&self, symbol: S) -> Object {
         self.bindings
             .get(&symbol.as_ref().to_string())
@@ -156,8 +159,7 @@ impl Scope
     }
 }
 
-pub fn eval(ast: Ast, scope: &Scope) -> EvalResult<Object>
-{
+pub fn eval(ast: Ast, scope: &Scope) -> EvalResult<Object> {
     match ast {
         Ast::Literal(lit) => match lit {
             Literal::Integer(x) => Ok(Object::new_int(x)),
