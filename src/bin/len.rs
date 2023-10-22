@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use chumsky::Parser;
-use len::{eval::Scope, parser};
+use len::{ast::parser, eval::Scope};
 
 fn main() {
     let mut stdout = io::stdout();
@@ -14,10 +14,22 @@ fn main() {
         stdout.flush().unwrap();
 
         let mut buf = String::new();
-        stdin.read_line(&mut buf).unwrap();
+        let exit = stdin.read_line(&mut buf);
+
+        match exit {
+            Ok(0) => {
+                println!("\nGoodbye");
+                return;
+            }
+            Ok(_) => {}
+            err @ Err(_) => {
+                err.unwrap();
+            }
+        }
+        println!("buf:  {:?}", buf);
 
         let input = buf.trim();
-        println!("{}", input);
+        println!("{:?}", input);
 
         let tokens = len::lexer::lexer().parse(input);
 
