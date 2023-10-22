@@ -104,6 +104,14 @@ impl<'parent> Scope<'parent> {
         );
 
         bindings.insert(
+            String::from("inc"),
+            Object::new_function(|x| match &*x {
+                ObjectRaw::Int(i) => Object::new_int(i + 1),
+                _ => todo!(),
+            }),
+        );
+
+        bindings.insert(
             String::from("get"),
             Object::new_function(|left| {
                 let left = left.clone();

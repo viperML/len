@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use chumsky::Parser;
-use len::{ast::parser, eval::Scope};
+use len::{ast::{expression_parser, self}, eval::Scope};
 
 fn main() {
     let mut stdout = io::stdout();
@@ -35,7 +35,7 @@ fn main() {
 
         if !tokens.has_errors() {
             let tokens = tokens.output().unwrap();
-            let ast = parser().parse(tokens);
+            let ast = ast::expression_parser().parse(tokens);
 
             if !ast.has_errors() {
                 let ast = ast.output().unwrap();
