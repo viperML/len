@@ -69,7 +69,9 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
 
         let r#struct = struct_elem
             .separated_by(just(TokenKind::Comma))
-            .to(Ast::Todo);
+            .collect::<HashMap<_, _>>()
+            .map(Ast::Product)
+            .delimited_by(just(TokenKind::LeftCurly), just(TokenKind::RightCurly));
 
         let atom = literal
             // -
@@ -78,12 +80,19 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
             .or(grouping)
             .labelled("atom");
 
-        let symbol = select! {
+        let application = atom.clone().foldl(atom.clone().repeated(), |op, o| {
+            Ast::FunctionCall(FunctionCall {
+                function: Box::new(op),
+                argument: Box::new(o),
+            })
+        });
+
+        let any_symbol = select! {
             TokenKind::Symbol(s) => Identifier { name: s.to_string() },
         }
         .map(Ast::Identifier);
 
-        let op = |c| {
+        let mk_symbol = |c| {
             select! {
                 TokenKind::Symbol(s) if c == s => Identifier { name: s.to_string() },
             }
@@ -102,17 +111,10 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
             })
         };
 
-        atom.clone().pratt((
-            postfix(3, atom, |o: Ast, op: Ast| {
-                trace!("Creating function call");
-                Ast::FunctionCall(FunctionCall {
-                    function: Box::new(op),
-                    argument: Box::new(o),
-                })
-            }),
-            infix(left(2), symbol, infix_fold),
-            infix(left(1), op("+"), infix_fold),
-            infix(left(1), op("-"), infix_fold),
+        application.pratt((
+            infix(left(2), any_symbol, infix_fold),
+            infix(left(1), mk_symbol("+"), infix_fold),
+            infix(left(1), mk_symbol("-"), infix_fold),
         ))
     })
 }
