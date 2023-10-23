@@ -7,6 +7,6 @@ ParseResult {
     errs: [
         found 'Ident(
             "foo",
-        )' at 1..2 expected "non-infix atom", 'LeftParenthesis', or 'RightParenthesis',
+        )' at 1..2 expected "atom", 'LeftParenthesis', or 'RightParenthesis',
     ],
 }

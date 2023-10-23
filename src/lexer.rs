@@ -20,8 +20,8 @@ pub enum TokenKind<'src> {
 
 #[derive(Debug)]
 pub struct Token<'src> {
-    kind: TokenKind<'src>,
-    span: SimpleSpan,
+    pub kind: TokenKind<'src>,
+    pub span: SimpleSpan,
 }
 
 fn is_reserved_char(c: &char) -> bool {
@@ -112,6 +112,7 @@ mod tests {
     #[traced_test]
     fn test_lexer(
         #[values(
+            ("empty", ""),
             ("int", "1 23 313 1"),
             ("symbols", "+ == != -"),
             ("symbols_split", r#"+3+1--3//3&(s++)"#),

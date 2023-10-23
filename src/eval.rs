@@ -103,6 +103,28 @@ impl<'parent> Scope<'parent> {
         );
 
         bindings.insert(
+            String::from("-"),
+            Object::new_function(|left| {
+                let left = left.clone();
+                Object::new_function(move |right| match (&*left, &*right) {
+                    (ObjectRaw::Int(a), ObjectRaw::Int(b)) => Object::new_int(a - b),
+                    _ => todo!(),
+                })
+            }),
+        );
+
+        bindings.insert(
+            String::from("*"),
+            Object::new_function(|left| {
+                let left = left.clone();
+                Object::new_function(move |right| match (&*left, &*right) {
+                    (ObjectRaw::Int(a), ObjectRaw::Int(b)) => Object::new_int(a * b),
+                    _ => todo!(),
+                })
+            }),
+        );
+
+        bindings.insert(
             String::from("inc"),
             Object::new_function(|x| match &*x {
                 ObjectRaw::Int(i) => Object::new_int(i + 1),

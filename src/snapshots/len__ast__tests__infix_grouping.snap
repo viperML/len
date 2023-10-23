@@ -1,0 +1,68 @@
+---
+source: src/ast.rs
+expression: p.parse(input.1)
+---
+ParseResult {
+    output: Some(
+        FunctionCall(
+            FunctionCall {
+                function: FunctionCall(
+                    FunctionCall {
+                        function: Identifier(
+                            Identifier {
+                                name: "+",
+                            },
+                        ),
+                        argument: FunctionCall(
+                            FunctionCall {
+                                function: FunctionCall(
+                                    FunctionCall {
+                                        function: Identifier(
+                                            Identifier {
+                                                name: "+",
+                                            },
+                                        ),
+                                        argument: Identifier(
+                                            Identifier {
+                                                name: "a",
+                                            },
+                                        ),
+                                    },
+                                ),
+                                argument: Identifier(
+                                    Identifier {
+                                        name: "c",
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+                argument: FunctionCall(
+                    FunctionCall {
+                        function: FunctionCall(
+                            FunctionCall {
+                                function: Identifier(
+                                    Identifier {
+                                        name: "+",
+                                    },
+                                ),
+                                argument: Identifier(
+                                    Identifier {
+                                        name: "a",
+                                    },
+                                ),
+                            },
+                        ),
+                        argument: Identifier(
+                            Identifier {
+                                name: "c",
+                            },
+                        ),
+                    },
+                ),
+            },
+        ),
+    ),
+    errs: [],
+}

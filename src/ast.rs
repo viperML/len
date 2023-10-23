@@ -4,6 +4,7 @@ use chumsky::extra::ParserExtra;
 use chumsky::pratt::{infix, left, prefix};
 use chumsky::prelude::*;
 use chumsky::Parser;
+use std::borrow::Cow;
 use std::ops::Not;
 
 #[derive(Debug, Clone)]
@@ -55,35 +56,39 @@ pub fn expression_parser<'src, E: ParserExtra<'src, &'src [TokenKind<'src>]>>(
         .map(Ast::Literal);
 
         let ident = select! {
-            TokenKind::Ident(x) => x,
+            TokenKind::Ident(s) => Identifier { name: s.to_string() },
         }
-        .filter(|s| is_infix(s).not())
-        .map(|s| {
-            Ast::Identifier(Identifier {
-                name: s.to_string(),
-            })
-        });
+        .map(Ast::Identifier);
+
+        let symbol = select! {
+            TokenKind::Symbol(s) => Identifier { name: s.to_string() },
+        }
+        .map(Ast::Identifier);
 
         let grouping = expr.clone().delimited_by(
             just(TokenKind::LeftParenthesis),
             just(TokenKind::RightParenthesis),
         );
 
-        let atom = literal.or(ident).or(grouping).labelled("non-infix atom");
+        let op = |c| {
+            select! {
+                TokenKind::Symbol(s) if c == s => Identifier { name: s.to_string() },
+            }
+            .map(Ast::Identifier)
+        };
 
-        let infix_ident = select! {
-            TokenKind::Ident(s) => {
-                if is_infix(s) {
-                    Some( Ast::Identifier(Identifier {
-                        name: s.to_string(),
-                    }))
-                } else {
-                    None
-                }
-            },
-        }
-        .filter(|ast| ast.is_some())
-        .map(|ast| ast.unwrap());
+        let atom = literal.or(ident).or(grouping).labelled("atom");
+
+        let infix_fold = |left: Ast, op: Ast, right: Ast| {
+            let first_op = Ast::FunctionCall(FunctionCall {
+                function: Box::new(op),
+                argument: Box::new(left),
+            });
+            Ast::FunctionCall(FunctionCall {
+                function: Box::new(first_op),
+                argument: Box::new(right),
+            })
+        };
 
         atom.clone().pratt((
             prefix(3, atom, |op: Ast, o: Ast| {
@@ -92,16 +97,9 @@ pub fn expression_parser<'src, E: ParserExtra<'src, &'src [TokenKind<'src>]>>(
                     argument: Box::new(o),
                 })
             }),
-            infix(left(2), infix_ident, |left: Ast, op: Ast, right: Ast| {
-                let first_op = Ast::FunctionCall(FunctionCall {
-                    function: Box::new(op),
-                    argument: Box::new(left),
-                });
-                Ast::FunctionCall(FunctionCall {
-                    function: Box::new(first_op),
-                    argument: Box::new(right),
-                })
-            }),
+            infix(left(2), symbol, infix_fold),
+            infix(left(1), op("+"), infix_fold),
+            infix(left(1), op("-"), infix_fold),
         ))
     })
 }
@@ -156,10 +154,30 @@ mod tests {
                 TokenKind::Ident("baz"),
             ][..]),
             ("infix", &[
-                TokenKind::Ident("foo"),
-                TokenKind::Ident("+"),
-                TokenKind::Ident("bar"),
+                TokenKind::Number(1.into()),
+                TokenKind::Symbol("+"),
+                TokenKind::Number(1.into()),
             ][..]),
+            ("infix_grouping", &[
+                TokenKind::LeftParenthesis,
+                TokenKind::Ident("a"),
+                TokenKind::Symbol("+"),
+                TokenKind::Ident("c"),
+                TokenKind::RightParenthesis,
+                TokenKind::Symbol("+"),
+                TokenKind::LeftParenthesis,
+                TokenKind::Ident("a"),
+                TokenKind::Symbol("+"),
+                TokenKind::Ident("c"),
+                TokenKind::RightParenthesis,
+            ][..]),
+            ("assoc", &[
+                TokenKind::Ident("a"),
+                TokenKind::Symbol("+"),
+                TokenKind::Ident("b"),
+                TokenKind::Symbol("*"),
+                TokenKind::Ident("c"),
+            ][..])
         )]
         input: (&str, &[TokenKind<'src>]),
     ) {

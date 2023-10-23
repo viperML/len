@@ -1,0 +1,14 @@
+---
+source: src/lexer.rs
+expression: "(input.0, input.1, p.parse(input.1))"
+---
+(
+    "empty",
+    "",
+    ParseResult {
+        output: Some(
+            [],
+        ),
+        errs: [],
+    },
+)

@@ -13,17 +13,17 @@ ParseResult {
                                 name: "+",
                             },
                         ),
-                        argument: Identifier(
-                            Identifier {
-                                name: "foo",
-                            },
+                        argument: Literal(
+                            Integer(
+                                1,
+                            ),
                         ),
                     },
                 ),
-                argument: Identifier(
-                    Identifier {
-                        name: "bar",
-                    },
+                argument: Literal(
+                    Integer(
+                        1,
+                    ),
                 ),
             },
         ),
