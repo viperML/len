@@ -1,14 +1,11 @@
-use std::ops::Not;
-
-use chumsky::error::Rich;
 use chumsky::extra::ParserExtra;
 use chumsky::input::StrInput;
-use chumsky::span::Span;
+
 use chumsky::text::Char;
 
 use crate::Int;
-use chumsky::{extra, Parser};
-use chumsky::{input::ValueInput, prelude::*};
+use chumsky::prelude::*;
+use chumsky::Parser;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum TokenKind<'src> {
@@ -108,7 +105,7 @@ mod tests {
             .repeated()
             .collect::<Vec<_>>();
 
-        assert_debug_snapshot!((input, p.parse(input)));
+        assert_debug_snapshot!(input, (input, p.parse(input)));
     }
 
     #[rstest]
@@ -127,6 +124,6 @@ mod tests {
     ) {
         let p = lexer::<TestExtra>().padded();
 
-        assert_debug_snapshot!((input.0, input.1, p.parse(input.1)));
+        assert_debug_snapshot!(input.0, (input.0, input.1, p.parse(input.1)));
     }
 }

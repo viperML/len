@@ -1,11 +1,3 @@
-use std::io::{self, Write};
-
-use chumsky::{extra, prelude::Rich, Parser};
-use len::{
-    ast::{self, expression_parser},
-    eval::Scope,
-};
-
 #[cfg(empty)]
 fn main() {
     let mut stdout = io::stdout();

@@ -1,5 +1,4 @@
-use crate::ast::Identifier;
-use crate::ast::{Ast, FunctionCall, Literal};
+use crate::ast::{Ast, Literal};
 use crate::Int;
 use std::ops::Deref;
 use std::{collections::HashMap, error::Error, fmt::Display, rc::Rc};
@@ -147,7 +146,7 @@ pub fn eval(ast: Ast, scope: &Scope) -> EvalResult<Object> {
             Literal::String(x) => Ok(Object::new_string(x)),
             _ => Err(EvalError::Todo),
         },
-        Ast::Identifier(ident) => Ok(scope.symbol_lookup(&ident.name)),
+        Ast::Identifier(ident) => Ok(scope.symbol_lookup(ident.name)),
         Ast::FunctionCall(call) => {
             let function = eval(*call.function, scope).unwrap();
             let argument = eval(*call.argument, scope).unwrap();
@@ -164,6 +163,8 @@ pub fn eval(ast: Ast, scope: &Scope) -> EvalResult<Object> {
 
 #[cfg(test)]
 mod tests {
+    use crate::ast::{FunctionCall, Identifier};
+
     use super::*;
     use tracing::debug;
 
