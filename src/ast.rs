@@ -1,17 +1,22 @@
-use crate::lexer::TokenKind;
+use crate::lexer::{Token, TokenKind};
 use crate::Int;
 use chumsky::extra::ParserExtra;
 use chumsky::pratt::{infix, left, prefix};
 use chumsky::prelude::*;
 use chumsky::Parser;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::ops::Not;
+use tracing::{debug, trace};
+use tracing_test::traced_test;
 
 #[derive(Debug, Clone)]
 pub enum Ast {
     Literal(Literal),
     FunctionCall(FunctionCall),
     Identifier(Identifier),
+    Product(HashMap<String, Ast>),
+    Todo,
 }
 
 #[derive(Debug, Clone)]
@@ -35,17 +40,8 @@ pub struct Identifier {
 #[derive(Debug, PartialEq)]
 pub struct Spanned2<T>(T, SimpleSpan<usize>);
 
-fn is_infix(ident: &str) -> bool {
-    ident
-        .chars()
-        .next()
-        .unwrap_or_default()
-        .is_alphabetic()
-        .not()
-}
-
-pub fn expression_parser<'src, E: ParserExtra<'src, &'src [TokenKind<'src>]>>(
-) -> impl Parser<'src, &'src [TokenKind<'src>], Ast, extra::Err<Rich<'src, TokenKind<'src>>>> {
+pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
+) -> impl Parser<'s, &'s [TokenKind<'s>], Ast, extra::Err<Rich<'s, TokenKind<'s>>>> {
     recursive(|expr| {
         let literal = select! {
             TokenKind::Ident("true") => Literal::Boolean(true),
@@ -60,15 +56,32 @@ pub fn expression_parser<'src, E: ParserExtra<'src, &'src [TokenKind<'src>]>>(
         }
         .map(Ast::Identifier);
 
-        let symbol = select! {
-            TokenKind::Symbol(s) => Identifier { name: s.to_string() },
-        }
-        .map(Ast::Identifier);
-
         let grouping = expr.clone().delimited_by(
             just(TokenKind::LeftParenthesis),
             just(TokenKind::RightParenthesis),
         );
+
+        let struct_elem = select! {
+            TokenKind::Ident(s) => s.to_string(),
+        }
+        .then_ignore(just(TokenKind::Colon))
+        .then(literal);
+
+        let r#struct = struct_elem
+            .separated_by(just(TokenKind::Comma))
+            .to(Ast::Todo);
+
+        let atom = literal
+            // -
+            .or(r#struct)
+            .or(ident)
+            .or(grouping)
+            .labelled("atom");
+
+        let symbol = select! {
+            TokenKind::Symbol(s) => Identifier { name: s.to_string() },
+        }
+        .map(Ast::Identifier);
 
         let op = |c| {
             select! {
@@ -76,8 +89,6 @@ pub fn expression_parser<'src, E: ParserExtra<'src, &'src [TokenKind<'src>]>>(
             }
             .map(Ast::Identifier)
         };
-
-        let atom = literal.or(ident).or(grouping).labelled("atom");
 
         let infix_fold = |left: Ast, op: Ast, right: Ast| {
             let first_op = Ast::FunctionCall(FunctionCall {

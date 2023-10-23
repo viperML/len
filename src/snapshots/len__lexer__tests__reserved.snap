@@ -1,0 +1,39 @@
+---
+source: src/lexer.rs
+expression: "(input.0, input.1, p.parse(input.1))"
+---
+(
+    "reserved",
+    "():{},",
+    ParseResult {
+        output: Some(
+            [
+                Token {
+                    kind: LeftParenthesis,
+                    span: 0..1,
+                },
+                Token {
+                    kind: RightParenthesis,
+                    span: 1..2,
+                },
+                Token {
+                    kind: Colon,
+                    span: 2..3,
+                },
+                Token {
+                    kind: LeftCurly,
+                    span: 3..4,
+                },
+                Token {
+                    kind: RightCurly,
+                    span: 4..5,
+                },
+                Token {
+                    kind: Comma,
+                    span: 5..6,
+                },
+            ],
+        ),
+        errs: [],
+    },
+)

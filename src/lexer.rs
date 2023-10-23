@@ -16,6 +16,10 @@ pub enum TokenKind<'src> {
     Symbol(&'src str),
     RightParenthesis,
     LeftParenthesis,
+    Colon,
+    LeftCurly,
+    RightCurly,
+    Comma,
 }
 
 #[derive(Debug)]
@@ -53,16 +57,21 @@ pub fn lexer<'s, E: ParserExtra<'s, LexerI<'s>>>() -> impl Parser<'s, LexerI<'s>
         .map(TokenKind::String)
         .delimited_by(just('"'), just('"'));
 
-    let right_parens = just(')').map(|_| TokenKind::RightParenthesis);
-    let left_parens = just('(').map(|_| TokenKind::LeftParenthesis);
-
     let symbol = symbol().to_slice().map(TokenKind::Symbol);
 
     let ident = chumsky::text::unicode::ident().map(TokenKind::Ident);
 
+    let reserved = select! {
+        ')' => TokenKind::RightParenthesis,
+        '(' => TokenKind::LeftParenthesis,
+        ':' => TokenKind::Colon,
+        '}' => TokenKind::RightCurly,
+        '{' => TokenKind::LeftCurly,
+        ',' => TokenKind::Comma,
+    };
+
     number
-        .or(right_parens)
-        .or(left_parens)
+        .or(reserved)
         .or(symbol)
         .or(string)
         .or(ident)
@@ -120,6 +129,7 @@ mod tests {
             ("bad s", r#" "foo "#),
             ("parens", r#"(12 +23)()("foo")(1+1)"#),
             ("ident", "foo bar foo_bar foo-bar (foo+1)"),
+            ("reserved", "():{},"),
         )]
         input: (&str, &str),
     ) {

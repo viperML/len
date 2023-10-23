@@ -180,6 +180,7 @@ pub fn eval(ast: Ast, scope: &Scope) -> EvalResult<Object> {
                 _ => Err(EvalError::TypeError),
             }
         }
+        _ => todo!(),
     }
 }
 
