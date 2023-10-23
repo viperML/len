@@ -164,7 +164,6 @@ pub fn eval(ast: Ast, scope: &Scope) -> EvalResult<Object> {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use tracing::debug;
 

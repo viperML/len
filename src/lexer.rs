@@ -16,6 +16,7 @@ pub enum TokenKind<'src> {
     Bind,
     String(&'src str),
     Ident(&'src str),
+    Symbol(&'src str),
     RightParenthesis,
     LeftParenthesis,
 }
@@ -30,15 +31,22 @@ fn is_reserved_char(c: &char) -> bool {
     r#"(),;[]`{}_:"'"#.chars().any(|reserved| reserved == c.to_char())
 }
 
-fn unicode_ident<'a, I: StrInput<'a, C>, C: Char>() -> impl Parser<'a, I, &'a C::Str> + Copy + Clone
-{
-    let valid_ident =
-        any().filter(|c: &C| !c.to_char().is_whitespace() && !is_reserved_char(&c.to_char()));
+#[must_use]
+fn symbol<'a, I: StrInput<'a, C>, C: Char, E: ParserExtra<'a, I>>(
+) -> impl Parser<'a, I, &'a C::Str, E> + Copy + Clone {
+    let f = |c: &C| {
+        let c = c.to_char();
+        !c.is_whitespace() && !c.is_alphanumeric() && !is_reserved_char(&c)
+    };
 
-    valid_ident.then(valid_ident.repeated()).to_slice()
+    any().filter(f).then(any().filter(f).repeated()).to_slice()
 }
 
-pub fn lexer2<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
+pub type LexerI<'a> = &'a str;
+pub type LexerO<'a> = Vec<Token<'a>>;
+
+#[must_use]
+pub fn lexer<'s, E: ParserExtra<'s, LexerI<'s>>>() -> impl Parser<'s, LexerI<'s>, LexerO<'s>, E> {
     let number = text::int(10).map(|s: &str| TokenKind::Number(s.parse().unwrap()));
 
     let string = any()
@@ -51,44 +59,21 @@ pub fn lexer2<'src>() -> impl Parser<'src, &'src str, Vec<Token<'src>>> {
     let right_parens = just(')').map(|_| TokenKind::RightParenthesis);
     let left_parens = just('(').map(|_| TokenKind::LeftParenthesis);
 
-    let ident = unicode_ident().to_slice().map(TokenKind::Ident);
+    let symbol = symbol().to_slice().map(TokenKind::Symbol);
+
+    let ident = chumsky::text::unicode::ident().map(TokenKind::Ident);
 
     number
-        .or(string)
         .or(right_parens)
         .or(left_parens)
+        .or(symbol)
+        .or(string)
         .or(ident)
+        .padded()
         .map_with(|t: TokenKind, e| Token {
             kind: t,
             span: e.span(),
         })
-        .padded()
-        .repeated()
-        .collect()
-}
-
-pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<TokenKind<'src>>> {
-    let number = text::int(10).map(|s: &str| TokenKind::Number(s.parse().unwrap()));
-
-    let string = any()
-        .filter(|c| *c != '"')
-        .repeated()
-        .to_slice()
-        .map(TokenKind::String)
-        .delimited_by(just('"'), just('"'));
-
-    let right_parens = just(')').map(|_| TokenKind::RightParenthesis);
-    let left_parens = just('(').map(|_| TokenKind::LeftParenthesis);
-
-    let ident = unicode_ident().to_slice().map(TokenKind::Ident);
-
-    number
-        .or(string)
-        .or(right_parens)
-        .or(left_parens)
-        .or(ident)
-        // .map_with_span(|token, span| (token, span))
-        .padded()
         .repeated()
         .collect()
 }
@@ -96,74 +81,52 @@ pub fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<TokenKind<'src>>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chumsky::error;
     use insta::assert_debug_snapshot;
-    use tracing::debug;
+    use rstest::rstest;
     use tracing_test::traced_test;
 
-    #[test]
+    type TestExtra = extra::Err<error::Cheap>;
+
+    #[rstest]
     #[traced_test]
-    fn test_unicode_ident() {
-        assert_debug_snapshot!(unicode_ident().padded().parse(" + "));
-        assert_debug_snapshot!(unicode_ident().padded().parse(" abc "));
-        assert_debug_snapshot!(unicode_ident().parse(" "));
-        assert_debug_snapshot!(unicode_ident().padded().parse(" ( ) "));
+    fn test_symbol(
+        #[values(
+            //-
+            " + ",
+            " + ",
+            " +2",
+            " ++ ",
+            " // ",
+            " - - - -- - - ",
+            " () , . ",
+        )]
+        input: &str,
+    ) {
+        let p = symbol::<_, _, TestExtra>()
+            .padded()
+            .repeated()
+            .collect::<Vec<_>>();
+
+        assert_debug_snapshot!((input, p.parse(input)));
     }
 
-    #[test]
+    #[rstest]
     #[traced_test]
-    fn test_lexer() {
-        assert_debug_snapshot!(lexer().parse(r#"1 + 2 = 1 ("hello" = hello)"#));
-        assert_debug_snapshot!(lexer().parse(r#"== !="#));
+    fn test_lexer(
+        #[values(
+            ("int", "1 23 313 1"),
+            ("symbols", "+ == != -"),
+            ("symbols_split", r#"+3+1--3//3&(s++)"#),
+            ("string", r#" "foo" "bar" "#),
+            ("bad s", r#" "foo "#),
+            ("parens", r#"(12 +23)()("foo")(1+1)"#),
+            ("ident", "foo bar foo_bar foo-bar (foo+1)"),
+        )]
+        input: (&str, &str),
+    ) {
+        let p = lexer::<TestExtra>().padded();
+
+        assert_debug_snapshot!((input.0, input.1, p.parse(input.1)));
     }
-
-    #[test]
-    #[traced_test]
-    fn test_lexer2() {
-        let input = "hello {{";
-
-        let res = lexer2().parse(input);
-        debug!("{:#?}", res);
-        todo!();
-    }
-
-    // #[test]
-    // #[traced_test]
-    // fn parser() {
-    //     use super::*;
-
-    //     let tokens = lexer::lexer().parse(" f 1 + 1 ").into_result().unwrap();
-    //     debug!(?tokens);
-    //     // assert_debug_snapshot!(parser().parse(&tokens));
-    //     let result = parser().parse(&tokens);
-    //     debug!("{:#?}", result);
-    //     // todo!();
-
-    //     let input = vec![
-    //         Token::Number(1.into()),
-    //         Token::Ident("+"),
-    //         Token::Number(2.into()),
-    //     ];
-    //     assert_debug_snapshot!("1 + 2", parser().parse(&input));
-
-    //     let input = vec![
-    //         Token::Number(1.into()),
-    //         Token::Ident("+"),
-    //         Token::LeftParenthesis,
-    //         Token::Number(2.into()),
-    //         Token::Ident("^^"),
-    //         Token::Number(3.into()),
-    //         Token::RightParenthesis,
-    //     ];
-    //     assert_debug_snapshot!("1 + (2 ^^ 3)", parser().parse(&input));
-
-    //     let input = vec![
-    //         Token::Ident("map"),
-    //         Token::LeftParenthesis,
-    //         Token::Ident("x"),
-    //         Token::Ident("y"),
-    //         Token::RightParenthesis,
-    //         Token::Ident("bar"),
-    //     ];
-    //     assert_debug_snapshot!("map (x y) bar", parser().parse(&input));
-    // }
 }

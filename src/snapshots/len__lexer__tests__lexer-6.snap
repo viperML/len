@@ -1,0 +1,77 @@
+---
+source: src/lexer.rs
+expression: "(input.0, input.1, p.parse(input.1))"
+---
+(
+    "ident",
+    "foo bar foo_bar foo-bar (foo+1)",
+    ParseResult {
+        output: Some(
+            [
+                Token {
+                    kind: Ident(
+                        "foo",
+                    ),
+                    span: 0..4,
+                },
+                Token {
+                    kind: Ident(
+                        "bar",
+                    ),
+                    span: 4..8,
+                },
+                Token {
+                    kind: Ident(
+                        "foo_bar",
+                    ),
+                    span: 8..16,
+                },
+                Token {
+                    kind: Ident(
+                        "foo",
+                    ),
+                    span: 16..19,
+                },
+                Token {
+                    kind: Symbol(
+                        "-",
+                    ),
+                    span: 19..20,
+                },
+                Token {
+                    kind: Ident(
+                        "bar",
+                    ),
+                    span: 20..24,
+                },
+                Token {
+                    kind: LeftParenthesis,
+                    span: 24..25,
+                },
+                Token {
+                    kind: Ident(
+                        "foo",
+                    ),
+                    span: 25..28,
+                },
+                Token {
+                    kind: Symbol(
+                        "+",
+                    ),
+                    span: 28..29,
+                },
+                Token {
+                    kind: Number(
+                        1,
+                    ),
+                    span: 29..30,
+                },
+                Token {
+                    kind: RightParenthesis,
+                    span: 30..31,
+                },
+            ],
+        ),
+        errs: [],
+    },
+)

@@ -1,0 +1,14 @@
+---
+source: src/ast.rs
+expression: p.parse(input.1)
+---
+ParseResult {
+    output: Some(
+        Identifier(
+            Identifier {
+                name: "foo",
+            },
+        ),
+    ),
+    errs: [],
+}

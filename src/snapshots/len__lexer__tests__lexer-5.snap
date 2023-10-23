@@ -1,0 +1,89 @@
+---
+source: src/lexer.rs
+expression: "(input.0, input.1, p.parse(input.1))"
+---
+(
+    "parens",
+    "(12 +23)()(\"foo\")(1+1)",
+    ParseResult {
+        output: Some(
+            [
+                Token {
+                    kind: LeftParenthesis,
+                    span: 0..1,
+                },
+                Token {
+                    kind: Number(
+                        12,
+                    ),
+                    span: 1..4,
+                },
+                Token {
+                    kind: Symbol(
+                        "+",
+                    ),
+                    span: 4..5,
+                },
+                Token {
+                    kind: Number(
+                        23,
+                    ),
+                    span: 5..7,
+                },
+                Token {
+                    kind: RightParenthesis,
+                    span: 7..8,
+                },
+                Token {
+                    kind: LeftParenthesis,
+                    span: 8..9,
+                },
+                Token {
+                    kind: RightParenthesis,
+                    span: 9..10,
+                },
+                Token {
+                    kind: LeftParenthesis,
+                    span: 10..11,
+                },
+                Token {
+                    kind: String(
+                        "foo",
+                    ),
+                    span: 11..16,
+                },
+                Token {
+                    kind: RightParenthesis,
+                    span: 16..17,
+                },
+                Token {
+                    kind: LeftParenthesis,
+                    span: 17..18,
+                },
+                Token {
+                    kind: Number(
+                        1,
+                    ),
+                    span: 18..19,
+                },
+                Token {
+                    kind: Symbol(
+                        "+",
+                    ),
+                    span: 19..20,
+                },
+                Token {
+                    kind: Number(
+                        1,
+                    ),
+                    span: 20..21,
+                },
+                Token {
+                    kind: RightParenthesis,
+                    span: 21..22,
+                },
+            ],
+        ),
+        errs: [],
+    },
+)

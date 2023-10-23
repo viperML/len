@@ -1,8 +1,12 @@
 use std::io::{self, Write};
 
-use chumsky::Parser;
-use len::{ast::{expression_parser, self}, eval::Scope};
+use chumsky::{extra, prelude::Rich, Parser};
+use len::{
+    ast::{self, expression_parser},
+    eval::Scope,
+};
 
+#[cfg(empty)]
 fn main() {
     let mut stdout = io::stdout();
     let stdin = io::stdin();
@@ -35,7 +39,7 @@ fn main() {
 
         if !tokens.has_errors() {
             let tokens = tokens.output().unwrap();
-            let ast = ast::expression_parser().parse(tokens);
+            let ast = ast::expression_parser::<extra::Err<Rich<_>>>().parse(tokens);
 
             if !ast.has_errors() {
                 let ast = ast.output().unwrap();
@@ -52,3 +56,5 @@ fn main() {
         }
     }
 }
+
+fn main() {}

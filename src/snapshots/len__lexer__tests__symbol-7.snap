@@ -1,14 +1,13 @@
 ---
 source: src/lexer.rs
-expression: "(input.0, input.1, p.parse(input.1))"
+expression: "(input, p.parse(input))"
 ---
 (
-    "bad s",
-    " \"foo ",
+    " () , . ",
     ParseResult {
         output: None,
         errs: [
-            at 6..6,
+            at 1..2,
         ],
     },
 )

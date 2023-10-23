@@ -1,0 +1,89 @@
+---
+source: src/lexer.rs
+expression: "(input.0, input.1, p.parse(input.1))"
+---
+(
+    "symbols_split",
+    "+3+1--3//3&(s++)",
+    ParseResult {
+        output: Some(
+            [
+                Token {
+                    kind: Symbol(
+                        "+",
+                    ),
+                    span: 0..1,
+                },
+                Token {
+                    kind: Number(
+                        3,
+                    ),
+                    span: 1..2,
+                },
+                Token {
+                    kind: Symbol(
+                        "+",
+                    ),
+                    span: 2..3,
+                },
+                Token {
+                    kind: Number(
+                        1,
+                    ),
+                    span: 3..4,
+                },
+                Token {
+                    kind: Symbol(
+                        "--",
+                    ),
+                    span: 4..6,
+                },
+                Token {
+                    kind: Number(
+                        3,
+                    ),
+                    span: 6..7,
+                },
+                Token {
+                    kind: Symbol(
+                        "//",
+                    ),
+                    span: 7..9,
+                },
+                Token {
+                    kind: Number(
+                        3,
+                    ),
+                    span: 9..10,
+                },
+                Token {
+                    kind: Symbol(
+                        "&",
+                    ),
+                    span: 10..11,
+                },
+                Token {
+                    kind: LeftParenthesis,
+                    span: 11..12,
+                },
+                Token {
+                    kind: Ident(
+                        "s",
+                    ),
+                    span: 12..13,
+                },
+                Token {
+                    kind: Symbol(
+                        "++",
+                    ),
+                    span: 13..15,
+                },
+                Token {
+                    kind: RightParenthesis,
+                    span: 15..16,
+                },
+            ],
+        ),
+        errs: [],
+    },
+)

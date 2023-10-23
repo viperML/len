@@ -1,0 +1,32 @@
+---
+source: src/ast.rs
+expression: p.parse(input.1)
+---
+ParseResult {
+    output: Some(
+        FunctionCall(
+            FunctionCall {
+                function: FunctionCall(
+                    FunctionCall {
+                        function: Identifier(
+                            Identifier {
+                                name: "+",
+                            },
+                        ),
+                        argument: Identifier(
+                            Identifier {
+                                name: "foo",
+                            },
+                        ),
+                    },
+                ),
+                argument: Identifier(
+                    Identifier {
+                        name: "bar",
+                    },
+                ),
+            },
+        ),
+    ),
+    errs: [],
+}

@@ -1,0 +1,39 @@
+---
+source: src/lexer.rs
+expression: "(input.0, input.1, p.parse(input.1))"
+---
+(
+    "symbols",
+    "+ == != -",
+    ParseResult {
+        output: Some(
+            [
+                Token {
+                    kind: Symbol(
+                        "+",
+                    ),
+                    span: 0..2,
+                },
+                Token {
+                    kind: Symbol(
+                        "==",
+                    ),
+                    span: 2..5,
+                },
+                Token {
+                    kind: Symbol(
+                        "!=",
+                    ),
+                    span: 5..8,
+                },
+                Token {
+                    kind: Symbol(
+                        "-",
+                    ),
+                    span: 8..9,
+                },
+            ],
+        ),
+        errs: [],
+    },
+)

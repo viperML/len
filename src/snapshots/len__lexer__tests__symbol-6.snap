@@ -1,0 +1,20 @@
+---
+source: src/lexer.rs
+expression: "(input, p.parse(input))"
+---
+(
+    " - - - -- - - ",
+    ParseResult {
+        output: Some(
+            [
+                "-",
+                "-",
+                "-",
+                "--",
+                "-",
+                "-",
+            ],
+        ),
+        errs: [],
+    },
+)

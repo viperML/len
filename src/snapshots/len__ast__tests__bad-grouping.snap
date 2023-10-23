@@ -1,0 +1,12 @@
+---
+source: src/ast.rs
+expression: p.parse(input.1)
+---
+ParseResult {
+    output: None,
+    errs: [
+        found 'Ident(
+            "foo",
+        )' at 1..2 expected "non-infix atom", 'LeftParenthesis', or 'RightParenthesis',
+    ],
+}

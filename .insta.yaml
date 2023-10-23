@@ -1,0 +1,5 @@
+behavior:
+  glob_fail_fast: false
+
+test:
+  auto_review: true

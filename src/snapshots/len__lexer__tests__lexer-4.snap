@@ -1,0 +1,39 @@
+---
+source: src/lexer.rs
+expression: "(input.0, input.1, p.parse(input.1))"
+---
+(
+    "int",
+    "1 23 313 1",
+    ParseResult {
+        output: Some(
+            [
+                Token {
+                    kind: Number(
+                        1,
+                    ),
+                    span: 0..2,
+                },
+                Token {
+                    kind: Number(
+                        23,
+                    ),
+                    span: 2..5,
+                },
+                Token {
+                    kind: Number(
+                        313,
+                    ),
+                    span: 5..9,
+                },
+                Token {
+                    kind: Number(
+                        1,
+                    ),
+                    span: 9..10,
+                },
+            ],
+        ),
+        errs: [],
+    },
+)

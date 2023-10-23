@@ -1,0 +1,23 @@
+---
+source: src/ast.rs
+expression: p.parse(input.1)
+---
+ParseResult {
+    output: Some(
+        FunctionCall(
+            FunctionCall {
+                function: Identifier(
+                    Identifier {
+                        name: "foo",
+                    },
+                ),
+                argument: Literal(
+                    Integer(
+                        1,
+                    ),
+                ),
+            },
+        ),
+    ),
+    errs: [],
+}
