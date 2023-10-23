@@ -1,7 +1,7 @@
 use crate::lexer::{Token, TokenKind};
 use crate::Int;
 use chumsky::extra::ParserExtra;
-use chumsky::pratt::{infix, left, prefix};
+use chumsky::pratt::{infix, left, postfix, prefix};
 use chumsky::prelude::*;
 use chumsky::Parser;
 use std::borrow::Cow;
@@ -91,6 +91,7 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
         };
 
         let infix_fold = |left: Ast, op: Ast, right: Ast| {
+            trace!("Creating infix");
             let first_op = Ast::FunctionCall(FunctionCall {
                 function: Box::new(op),
                 argument: Box::new(left),
@@ -102,7 +103,8 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
         };
 
         atom.clone().pratt((
-            prefix(3, atom, |op: Ast, o: Ast| {
+            postfix(3, atom, |o: Ast, op: Ast| {
+                trace!("Creating function call");
                 Ast::FunctionCall(FunctionCall {
                     function: Box::new(op),
                     argument: Box::new(o),
