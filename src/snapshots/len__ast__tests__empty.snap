@@ -5,6 +5,6 @@ expression: p.parse(input.1)
 ParseResult {
     output: None,
     errs: [
-        found end of input at 0..0 expected 'LeftParenthesis',
+        found end of input at 0..0 expected 'LeftCurly', or 'LeftParenthesis',
     ],
 }

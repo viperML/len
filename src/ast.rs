@@ -65,7 +65,7 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
             TokenKind::Ident(s) => s.to_string(),
         }
         .then_ignore(just(TokenKind::Colon))
-        .then(literal);
+        .then(expr);
 
         let r#struct = struct_elem
             .separated_by(just(TokenKind::Comma))
@@ -80,7 +80,8 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
             .or(grouping)
             .labelled("atom");
 
-        let application = atom.clone().foldl(atom.clone().repeated(), |op, o| {
+        // Left associative application
+        let application = atom.clone().foldl(atom.repeated(), |op, o| {
             Ast::FunctionCall(FunctionCall {
                 function: Box::new(op),
                 argument: Box::new(o),
@@ -115,6 +116,7 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
             infix(left(2), any_symbol, infix_fold),
             infix(left(1), mk_symbol("+"), infix_fold),
             infix(left(1), mk_symbol("-"), infix_fold),
+            infix(left(0), mk_symbol("$"), infix_fold),
         ))
     })
 }
@@ -186,13 +188,20 @@ mod tests {
                 TokenKind::Ident("c"),
                 TokenKind::RightParenthesis,
             ][..]),
-            ("assoc", &[
+            ("infix_assoc", &[
                 TokenKind::Ident("a"),
                 TokenKind::Symbol("+"),
                 TokenKind::Ident("b"),
                 TokenKind::Symbol("*"),
                 TokenKind::Ident("c"),
-            ][..])
+            ][..]),
+            ("struct_simple", &[
+                TokenKind::LeftCurly,
+                TokenKind::Ident("a"),
+                TokenKind::Colon,
+                TokenKind::Ident("b"),
+                TokenKind::RightCurly
+            ][..]),
         )]
         input: (&str, &[TokenKind<'src>]),
     ) {

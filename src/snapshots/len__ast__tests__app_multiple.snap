@@ -6,19 +6,9 @@ ParseResult {
     output: Some(
         FunctionCall(
             FunctionCall {
-                function: Identifier(
-                    Identifier {
-                        name: "foo",
-                    },
-                ),
-                argument: FunctionCall(
+                function: FunctionCall(
                     FunctionCall {
-                        function: Identifier(
-                            Identifier {
-                                name: "foo",
-                            },
-                        ),
-                        argument: FunctionCall(
+                        function: FunctionCall(
                             FunctionCall {
                                 function: Identifier(
                                     Identifier {
@@ -32,6 +22,16 @@ ParseResult {
                                 ),
                             },
                         ),
+                        argument: Identifier(
+                            Identifier {
+                                name: "foo",
+                            },
+                        ),
+                    },
+                ),
+                argument: Identifier(
+                    Identifier {
+                        name: "foo",
                     },
                 ),
             },

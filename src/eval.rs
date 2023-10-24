@@ -1,3 +1,5 @@
+use chumsky::primitive::todo;
+
 use crate::ast::{Ast, Literal};
 use crate::Int;
 use std::ops::Deref;
@@ -125,6 +127,19 @@ impl<'parent> Scope<'parent> {
         );
 
         bindings.insert(
+            String::from("$"),
+            Object::new_function(|left| {
+                let left = left.clone();
+                Object::new_function(move |right| {
+                    match &*left {
+                        ObjectRaw::Function(f) => (f.value)(right),
+                        _ => todo!(),
+                    }
+                })
+            }),
+        );
+
+        bindings.insert(
             String::from("inc"),
             Object::new_function(|x| match &*x {
                 ObjectRaw::Int(i) => Object::new_int(i + 1),
@@ -179,7 +194,7 @@ pub fn eval(ast: Ast, scope: &Scope) -> EvalResult<Object> {
                 }
                 _ => Err(EvalError::TypeError),
             }
-        },
+        }
         _ => todo!(),
     }
 }
