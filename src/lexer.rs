@@ -48,7 +48,10 @@ pub type LexerO<'a> = Vec<Token<'a>>;
 
 #[must_use]
 pub fn lexer<'s, E: ParserExtra<'s, LexerI<'s>>>() -> impl Parser<'s, LexerI<'s>, LexerO<'s>, E> {
-    let number = text::int(10).map(|s: &str| TokenKind::Number(s.parse().unwrap()));
+    let number = text::int(10)
+        .map(str::parse)
+        .unwrapped()
+        .map(TokenKind::Number);
 
     let string = any()
         .filter(|c| *c != '"')
@@ -70,11 +73,7 @@ pub fn lexer<'s, E: ParserExtra<'s, LexerI<'s>>>() -> impl Parser<'s, LexerI<'s>
         ',' => TokenKind::Comma,
     };
 
-    number
-        .or(reserved)
-        .or(symbol)
-        .or(string)
-        .or(ident)
+    choice((number, reserved, symbol, string, ident))
         .padded()
         .map_with(|t: TokenKind, e| Token {
             kind: t,
