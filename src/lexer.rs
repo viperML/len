@@ -73,7 +73,18 @@ pub fn lexer<'s, E: ParserExtra<'s, LexerI<'s>>>() -> impl Parser<'s, LexerI<'s>
         ',' => TokenKind::Comma,
     };
 
-    choice((number, reserved, symbol, string, ident))
+    let bind = just('=')
+        .then_ignore(
+            choice((
+                // -
+                none_of("=").ignored(),
+                end(),
+            ))
+            .rewind(),
+        )
+        .to(TokenKind::Bind);
+
+    choice((bind, number, reserved, symbol, string, ident))
         .padded()
         .map_with(|t: TokenKind, e| Token {
             kind: t,
@@ -128,7 +139,9 @@ mod tests {
             ("bad s", r#" "foo "#),
             ("parens", r#"(12 +23)()("foo")(1+1)"#),
             ("ident", "foo bar foo_bar foo-bar (foo+1)"),
-            ("reserved", "():{},"),
+            ("reserved", "():{},="),
+            ("assign", "a=b"),
+            ("assign2", "a=b==c"),
         )]
         input: (&str, &str),
     ) {

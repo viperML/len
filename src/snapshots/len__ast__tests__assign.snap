@@ -1,0 +1,19 @@
+---
+source: src/ast.rs
+expression: p.parse(input.1)
+---
+ParseResult {
+    output: Some(
+        Binding {
+            lhs: Identifier {
+                name: "a",
+            },
+            rhs: Identifier(
+                Identifier {
+                    name: "b",
+                },
+            ),
+        },
+    ),
+    errs: [],
+}

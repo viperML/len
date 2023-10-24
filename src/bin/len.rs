@@ -16,6 +16,8 @@ fn main() {
 
     info!("Welcome to the len repl");
 
+    let mut scope = None;
+
     loop {
         print!("len> ");
         stdout.flush().unwrap();
@@ -35,7 +37,7 @@ fn main() {
                 err.unwrap();
             }
             Ok(_) => {
-                len::complete::complete(&buf);
+                scope = Some(len::complete::complete(&buf, scope));
             }
         }
     }

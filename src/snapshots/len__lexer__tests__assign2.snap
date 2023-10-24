@@ -3,38 +3,38 @@ source: src/lexer.rs
 expression: "(input.0, input.1, p.parse(input.1))"
 ---
 (
-    "reserved",
-    "():{},=",
+    "assign2",
+    "a=b==c",
     ParseResult {
         output: Some(
             [
                 Token {
-                    kind: LeftParenthesis,
+                    kind: Ident(
+                        "a",
+                    ),
                     span: 0..1,
                 },
                 Token {
-                    kind: RightParenthesis,
+                    kind: Bind,
                     span: 1..2,
                 },
                 Token {
-                    kind: Colon,
+                    kind: Ident(
+                        "b",
+                    ),
                     span: 2..3,
                 },
                 Token {
-                    kind: LeftCurly,
-                    span: 3..4,
+                    kind: Symbol(
+                        "==",
+                    ),
+                    span: 3..5,
                 },
                 Token {
-                    kind: RightCurly,
-                    span: 4..5,
-                },
-                Token {
-                    kind: Comma,
+                    kind: Ident(
+                        "c",
+                    ),
                     span: 5..6,
-                },
-                Token {
-                    kind: Bind,
-                    span: 6..7,
                 },
             ],
         ),

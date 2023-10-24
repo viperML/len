@@ -1,0 +1,31 @@
+---
+source: src/lexer.rs
+expression: "(input.0, input.1, p.parse(input.1))"
+---
+(
+    "assign",
+    "a=b",
+    ParseResult {
+        output: Some(
+            [
+                Token {
+                    kind: Ident(
+                        "a",
+                    ),
+                    span: 0..1,
+                },
+                Token {
+                    kind: Bind,
+                    span: 1..2,
+                },
+                Token {
+                    kind: Ident(
+                        "b",
+                    ),
+                    span: 2..3,
+                },
+            ],
+        ),
+        errs: [],
+    },
+)

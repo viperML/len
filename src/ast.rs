@@ -7,15 +7,23 @@ use chumsky::Parser;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::Not;
+use tracing::span::Id;
 use tracing::{debug, trace};
 use tracing_test::traced_test;
 
 #[derive(Debug, Clone)]
 pub enum Ast {
+    Expr(Expr),
+    Binding { lhs: Identifier, rhs: Expr },
+    Todo,
+}
+
+#[derive(Debug, Clone)]
+pub enum Expr {
     Literal(Literal),
     FunctionCall(FunctionCall),
     Identifier(Identifier),
-    Product(HashMap<String, Ast>),
+    Product(HashMap<String, Expr>),
     Todo,
 }
 
@@ -28,8 +36,8 @@ pub enum Literal {
 
 #[derive(Debug, Clone)]
 pub struct FunctionCall {
-    pub(crate) function: Box<Ast>,
-    pub(crate) argument: Box<Ast>,
+    pub(crate) function: Box<Expr>,
+    pub(crate) argument: Box<Expr>,
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +49,7 @@ pub struct Identifier {
 pub struct Spanned2<T>(T, SimpleSpan<usize>);
 
 pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
-) -> impl Parser<'s, &'s [TokenKind<'s>], Ast, extra::Err<Rich<'s, TokenKind<'s>>>> {
+) -> impl Parser<'s, &'s [TokenKind<'s>], Expr, extra::Err<Rich<'s, TokenKind<'s>>>> + Clone {
     recursive(|expr| {
         let literal = select! {
             TokenKind::Ident("true") => Literal::Boolean(true),
@@ -49,12 +57,12 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
             TokenKind::Number(x) => Literal::Integer(x),
             TokenKind::String(x) => Literal::String(x.to_string()),
         }
-        .map(Ast::Literal);
+        .map(Expr::Literal);
 
         let ident = select! {
             TokenKind::Ident(s) => Identifier { name: s.to_string() },
         }
-        .map(Ast::Identifier);
+        .map(Expr::Identifier);
 
         let grouping = expr.clone().delimited_by(
             just(TokenKind::LeftParenthesis),
@@ -70,7 +78,7 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
         let r#struct = struct_elem
             .separated_by(just(TokenKind::Comma))
             .collect::<HashMap<_, _>>()
-            .map(Ast::Product)
+            .map(Expr::Product)
             .delimited_by(just(TokenKind::LeftCurly), just(TokenKind::RightCurly));
 
         let atom = literal
@@ -82,7 +90,7 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
 
         // Left associative application
         let application = atom.clone().foldl(atom.repeated(), |op, o| {
-            Ast::FunctionCall(FunctionCall {
+            Expr::FunctionCall(FunctionCall {
                 function: Box::new(op),
                 argument: Box::new(o),
             })
@@ -91,22 +99,22 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
         let any_symbol = select! {
             TokenKind::Symbol(s) => Identifier { name: s.to_string() },
         }
-        .map(Ast::Identifier);
+        .map(Expr::Identifier);
 
         let mk_symbol = |c| {
             select! {
                 TokenKind::Symbol(s) if c == s => Identifier { name: s.to_string() },
             }
-            .map(Ast::Identifier)
+            .map(Expr::Identifier)
         };
 
-        let infix_fold = |left: Ast, op: Ast, right: Ast| {
+        let infix_fold = |left: Expr, op: Expr, right: Expr| {
             trace!("Creating infix");
-            let first_op = Ast::FunctionCall(FunctionCall {
+            let first_op = Expr::FunctionCall(FunctionCall {
                 function: Box::new(op),
                 argument: Box::new(left),
             });
-            Ast::FunctionCall(FunctionCall {
+            Expr::FunctionCall(FunctionCall {
                 function: Box::new(first_op),
                 argument: Box::new(right),
             })
@@ -119,6 +127,20 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
             infix(left(0), mk_symbol("$"), infix_fold),
         ))
     })
+}
+
+pub fn ast_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
+) -> impl Parser<'s, &'s [TokenKind<'s>], Ast, extra::Err<Rich<'s, TokenKind<'s>>>> {
+    let ep = expression_parser::<E>();
+
+    let binding = select! {
+        TokenKind::Ident(s) => Identifier { name: s.to_string() },
+    }
+    .then_ignore(just(TokenKind::Bind))
+    .then(ep.clone())
+    .map(|(lhs, rhs)| Ast::Binding { lhs, rhs });
+
+    choice((binding, ep.map(Ast::Expr)))
 }
 
 #[cfg(test)]
@@ -206,6 +228,24 @@ mod tests {
         input: (&str, &[TokenKind<'src>]),
     ) {
         let p = expression_parser::<TestExtra>();
+
+        assert_debug_snapshot!(input.0, p.parse(input.1));
+    }
+
+    #[rstest]
+    #[traced_test]
+    fn test_ast<'src>(
+        #[values(
+            ("empty", &[][..]),
+            ("assign", &[
+                TokenKind::Ident("a"),
+                TokenKind::Bind,
+                TokenKind::Ident("b"),
+            ][..]),
+        )]
+        input: (&str, &[TokenKind<'src>]),
+    ) {
+        let p = ast_parser::<TestExtra>();
 
         assert_debug_snapshot!(input.0, p.parse(input.1));
     }
