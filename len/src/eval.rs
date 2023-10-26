@@ -1,6 +1,6 @@
 use chumsky::primitive::todo;
 use thiserror::Error;
-use tracing::{debug, info};
+use tracing::{debug, error, info, warn};
 
 use crate::ast::{self};
 use crate::Int;
@@ -57,6 +57,17 @@ pub enum RawObject {
     Product(HashMap<String, Object>),
 }
 
+impl RawObject {
+    fn assume_int(&self) -> ExprResult<&Int> {
+        match self {
+            RawObject::Int(i) => Ok(i),
+            other => Err(ExprError::TypeError {
+                expected: String::from("Int"),
+                found: format!("{:?}", other),
+            }),
+        }
+    }
+}
 
 pub struct Function {
     value: Box<dyn Fn(Object) -> ExprResult<Object>>,
@@ -71,7 +82,7 @@ impl fmt::Debug for Function {
 #[derive(Debug, Clone, Error)]
 pub enum ExprError {
     #[error("Type error")]
-    TypeError,
+    TypeError { expected: String, found: String },
     #[error("Todo")]
     Todo,
 }
@@ -137,9 +148,7 @@ impl RawScope {
 
         bindings.insert(
             String::from("inc"),
-            Object::new_function(|x| {
-                todo!()
-            }),
+            Object::new_function(|x| x.assume_int().map(|i| i + 1).map(Object::new_int)),
         );
 
         bindings.insert(
@@ -204,7 +213,10 @@ pub fn eval_expr(ast: ast::Expr, scope: Scope) -> ExprResult<Object> {
             let argument = eval_expr(*call.argument, scope.clone()).unwrap();
             match *function {
                 RawObject::Function(ref f) => (f.value)(argument),
-                _ => Err(ExprError::TypeError),
+                _ => Err(ExprError::TypeError {
+                    expected: todo!(),
+                    found: todo!(),
+                }),
             }
         }
         ast::Expr::Todo => todo!(),
@@ -223,8 +235,7 @@ pub fn eval_expr(ast: ast::Expr, scope: Scope) -> ExprResult<Object> {
 
                 eval_expr(*to.clone(), inner_scope)
             }))
-        }
-        // _ => todo!(),
+        } // _ => todo!(),
     }
 }
 
@@ -232,7 +243,10 @@ pub fn eval(ast: ast::Ast, scope: Scope) -> Option<Scope> {
     match ast {
         ast::Ast::Expr(expr) => {
             let res = eval_expr(expr, scope.clone());
-            info!("{:#?}", res);
+            match res {
+                Ok(inner) => info!(?inner),
+                Err(inner) => error!(?inner),
+            }
             None
         }
         ast::Ast::Binding {

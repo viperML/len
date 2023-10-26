@@ -1,3 +1,13 @@
 /target
 /.direnv
 /_site
+*result*
+*.log
+/bin
+.crates.toml
+.crates2.json
+
+# **/*.rs.bk
+# bin/
+# pkg/
+# wasm-pack.log

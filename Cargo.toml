@@ -2,7 +2,8 @@
 resolver = "2"
 members = [
     "len",
-    "len-cli"
+    "len-cli",
+    "len-web"
 ]
 
 [profile.dev.package.backtrace]

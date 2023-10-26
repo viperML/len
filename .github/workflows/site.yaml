@@ -1,4 +1,4 @@
-name: doc
+name: site
 
 on:
   push:
@@ -24,8 +24,7 @@ jobs:
 
       - name: Build
         run: |
-          nix develop -f shell.nix -c just doc
-          mv ./target/doc  ./_site
+          nix develop -c just web
 
       - name: Fix permissions
         run: |
