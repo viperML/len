@@ -1,7 +1,7 @@
 use chumsky::{error::Rich, extra, Parser};
 use len::{
     ast,
-    eval::Scope,
+    eval::RawScope,
     lexer::{lexer, Token},
 };
 use std::io::{self, Write};

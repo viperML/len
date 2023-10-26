@@ -1,0 +1,33 @@
+---
+source: src/lexer.rs
+expression: "(input.0, input.1, p.parse(input.1))"
+---
+(
+    "arrow2",
+    "a==>>b",
+    ParseResult {
+        output: Some(
+            [
+                Token {
+                    kind: Ident(
+                        "a",
+                    ),
+                    span: 0..1,
+                },
+                Token {
+                    kind: Symbol(
+                        "==>>",
+                    ),
+                    span: 1..5,
+                },
+                Token {
+                    kind: Ident(
+                        "b",
+                    ),
+                    span: 5..6,
+                },
+            ],
+        ),
+        errs: [],
+    },
+)

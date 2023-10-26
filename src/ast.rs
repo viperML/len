@@ -24,6 +24,7 @@ pub enum Expr {
     FunctionCall(FunctionCall),
     Identifier(Identifier),
     Product(HashMap<String, Expr>),
+    Lambda(Lambda),
     Todo,
 }
 
@@ -43,6 +44,12 @@ pub struct FunctionCall {
 #[derive(Debug, Clone)]
 pub struct Identifier {
     pub(crate) name: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct Lambda {
+    pub from: Identifier,
+    pub to: Box<Expr>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -73,20 +80,28 @@ pub fn expression_parser<'s, E: ParserExtra<'s, &'s [TokenKind<'s>]>>(
             TokenKind::Ident(s) => s.to_string(),
         }
         .then_ignore(just(TokenKind::Colon))
-        .then(expr);
+        .then(expr.clone());
 
         let r#struct = struct_elem
             .separated_by(just(TokenKind::Comma))
             .collect::<HashMap<_, _>>()
             .map(Expr::Product)
-            .delimited_by(just(TokenKind::LeftCurly), just(TokenKind::RightCurly));
+            .delimited_by(just(TokenKind::LeftCurly), just(TokenKind::RightCurly))
+            .labelled("struct");
 
-        let atom = literal
-            // -
-            .or(r#struct)
-            .or(ident)
-            .or(grouping)
-            .labelled("atom");
+        let lambda = select! {
+            TokenKind::Ident(s) => Identifier { name: s.to_string() },
+        }
+        .then_ignore(just(TokenKind::Arrow))
+        .then(expr)
+        .map(|(from, to)| Lambda {
+            from,
+            to: Box::new(to),
+        })
+        .map(Expr::Lambda)
+        .labelled("lambda");
+
+        let atom = choice((literal, r#struct, lambda, ident, grouping)).labelled("atom");
 
         // Left associative application
         let application = atom.clone().foldl(atom.repeated(), |op, o| {

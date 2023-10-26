@@ -20,6 +20,7 @@ pub enum TokenKind<'src> {
     LeftCurly,
     RightCurly,
     Comma,
+    Arrow,
 }
 
 #[derive(Debug)]
@@ -73,6 +74,8 @@ pub fn lexer<'s, E: ParserExtra<'s, LexerI<'s>>>() -> impl Parser<'s, LexerI<'s>
         ',' => TokenKind::Comma,
     };
 
+    let arrow = just('=').then(just('>')).to(TokenKind::Arrow);
+
     let bind = just('=')
         .then_ignore(
             choice((
@@ -84,7 +87,7 @@ pub fn lexer<'s, E: ParserExtra<'s, LexerI<'s>>>() -> impl Parser<'s, LexerI<'s>
         )
         .to(TokenKind::Bind);
 
-    choice((bind, number, reserved, symbol, string, ident))
+    choice((arrow, bind, number, reserved, symbol, string, ident))
         .padded()
         .map_with(|t: TokenKind, e| Token {
             kind: t,
@@ -142,6 +145,8 @@ mod tests {
             ("reserved", "():{},="),
             ("assign", "a=b"),
             ("assign2", "a=b==c"),
+            ("arrow", "a=>b"),
+            ("arrow2", "a==>>b")
         )]
         input: (&str, &str),
     ) {

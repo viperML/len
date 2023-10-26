@@ -33,7 +33,7 @@ pub fn complete(input: &str, scope: Option<Scope>) -> Scope {
             let ast = ast.into_output().unwrap();
             debug!("ast={:#?}", ast);
 
-            let res = crate::eval::eval(ast, &scope);
+            let res = crate::eval::eval(ast, scope.clone());
             if let Some(new_scope) = res {
                 scope = new_scope;
             }

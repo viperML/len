@@ -1,9 +1,10 @@
 use chumsky::primitive::todo;
-use tracing::info;
+use tracing::{debug, info};
 
-use crate::ast::{Ast, Expr, Literal};
+use crate::ast::{self, Ast, Expr, Literal};
 use crate::Int;
-use std::ops::Deref;
+use std::fmt;
+use std::ops::{Deref, DerefMut};
 use std::{collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone)]
@@ -59,8 +60,8 @@ pub struct Function {
     value: Rc<dyn Fn(Object) -> Object>,
 }
 
-impl std::fmt::Debug for Function {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Debug for Function {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "function@{:p}", self.value)
         // f.debug_struct("Function").field("value", &self.value).finish()
     }
@@ -73,8 +74,8 @@ pub enum EvalError {
 }
 
 impl Display for EvalError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Debug::fmt(self, f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
     }
 }
 
@@ -83,13 +84,16 @@ impl Error for EvalError {}
 type EvalResult<T> = Result<T, EvalError>;
 
 #[derive(Debug, Clone)]
-pub struct Scope {
-    parent: Option<Rc<Self>>,
-    bindings: HashMap<String, Object>,
+pub struct RawScope {
+    pub parent: Option<Scope>,
+    pub bindings: HashMap<String, Object>,
 }
 
-impl Scope {
-    pub fn std() -> Self {
+#[derive(Debug, Clone)]
+pub struct Scope(Rc<RawScope>);
+
+impl RawScope {
+    fn std() -> Self {
         let mut bindings = HashMap::new();
 
         bindings.insert(String::from("id"), Object::new_function(|x| x));
@@ -167,25 +171,45 @@ impl Scope {
 }
 
 impl Scope {
-    fn symbol_lookup<S: AsRef<str>>(&self, symbol: S) -> Object {
-        self.bindings
-            .get(&symbol.as_ref().to_string())
-            .unwrap()
-            .clone()
+    pub fn std() -> Self {
+        Scope(From::from(RawScope::std()))
+    }
+
+    #[tracing::instrument(ret, level = "debug")]
+    pub fn symbol_lookup<S: AsRef<str> + fmt::Debug>(&self, symbol: S) -> Option<Object> {
+        match self.bindings.get(&symbol.as_ref().to_string()) {
+            Some(o) => Some(o.clone()),
+            None => match self.parent.clone() {
+                None => None,
+                Some(p) => p.symbol_lookup(symbol),
+            },
+        }
+    }
+
+    pub fn from_raw(raw: RawScope) -> Self {
+        Self(From::from(raw))
     }
 }
 
-pub fn eval_expr(ast: Expr, scope: &Scope) -> EvalResult<Object> {
+impl Deref for Scope {
+    type Target = RawScope;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+pub fn eval_expr(ast: Expr, scope: Scope) -> EvalResult<Object> {
     match ast {
         Expr::Literal(lit) => match lit {
             Literal::Integer(x) => Ok(Object::new_int(x)),
             Literal::String(x) => Ok(Object::new_string(x)),
             _ => Err(EvalError::Todo),
         },
-        Expr::Identifier(ident) => Ok(scope.symbol_lookup(ident.name)),
+        Expr::Identifier(ident) => Ok(scope.symbol_lookup(ident.name).unwrap()),
         Expr::FunctionCall(call) => {
-            let function = eval_expr(*call.function, scope).unwrap();
-            let argument = eval_expr(*call.argument, scope).unwrap();
+            let function = eval_expr(*call.function, scope.clone()).unwrap();
+            let argument = eval_expr(*call.argument, scope.clone()).unwrap();
             match *function {
                 ObjectRaw::Function(ref f) => {
                     let result = (f.value)(argument);
@@ -194,14 +218,31 @@ pub fn eval_expr(ast: Expr, scope: &Scope) -> EvalResult<Object> {
                 _ => Err(EvalError::TypeError),
             }
         }
-        _ => todo!(),
+        Expr::Todo => todo!(),
+        Expr::Product(_) => todo!(),
+        Expr::Lambda(ast::Lambda { from, to }) => Ok({
+            let parent = scope.clone();
+            Object::new_function(move |argument| {
+                let mut bindings = HashMap::new();
+
+                bindings.insert(from.name.clone(), argument);
+
+                let inner_scope = Scope::from_raw(RawScope {
+                    parent: Some(parent.clone()),
+                    bindings,
+                });
+
+                eval_expr(*to.clone(), inner_scope).expect("FIXME")
+            })
+        }),
+        // _ => todo!(),
     }
 }
 
-pub fn eval<'a>(ast: Ast, scope: &'a Scope) -> Option<Scope> {
+pub fn eval(ast: Ast, scope: Scope) -> Option<Scope> {
     match ast {
         Ast::Expr(expr) => {
-            let res = eval_expr(expr, scope);
+            let res = eval_expr(expr, scope.clone());
             info!("{:#?}", res);
             None
         }
@@ -209,13 +250,17 @@ pub fn eval<'a>(ast: Ast, scope: &'a Scope) -> Option<Scope> {
             lhs: ident,
             rhs: expr,
         } => {
-            let res = eval_expr(expr, scope);
+            let res = eval_expr(expr, scope.clone());
             info!("{:#?}", res);
             let res = res.unwrap();
 
-            let mut new_scope = scope.clone();
-            new_scope.bindings.insert(ident.name, res);
-            Some(new_scope)
+            let mut new_bindings = scope.0.bindings.clone();
+            new_bindings.insert(ident.name, res);
+
+            Some(Scope(Rc::from(RawScope {
+                parent: scope.parent.clone(),
+                bindings: new_bindings,
+            })))
         }
         Ast::Todo => todo!(),
     }
@@ -227,30 +272,4 @@ mod tests {
 
     use super::*;
     use tracing::debug;
-
-    // #[test]
-    // #[traced_test]
-    fn test_eval<'src>() {
-        let ast = Expr::FunctionCall(FunctionCall {
-            function: Box::new(Expr::Identifier(Identifier {
-                name: String::from("id"),
-            })),
-            argument: Box::new(Expr::Literal(Literal::Integer(1.into()))),
-        });
-
-        let mut bindings = HashMap::new();
-
-        let func_id = Object::new_function(|x| x);
-        bindings.insert(String::from("id"), func_id);
-
-        let root_scope = Scope {
-            parent: None,
-            bindings,
-        };
-
-        let res = eval_expr(ast, &root_scope);
-        debug!(?res);
-
-        todo!();
-    }
 }
