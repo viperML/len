@@ -1,0 +1,21 @@
+[package]
+name = "len"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chumsky = { version = "1.0.0-alpha.6", features = [
+    "label",
+    "pratt"
+] }
+num = { version = "0.4.1", features = ["num-bigint"] }
+thiserror = "1.0.50"
+tracing = "0.1.37"
+tracing-test = "0.2.4"
+unicode-ident = "1.0.12"
+
+[dev-dependencies]
+insta = "1.32.0"
+rstest = "0.18.2"

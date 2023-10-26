@@ -1,0 +1,18 @@
+[package]
+name = "len-cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "garden"
+path = "src/main.rs"
+
+[dependencies]
+color-eyre = "0.6.2"
+eyre = "0.6.8"
+len = { version = "0.1.0", path = "../len" }
+tracing = "0.1.40"
+tracing-error = "0.2.0"
+tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }

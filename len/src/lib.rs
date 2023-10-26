@@ -5,3 +5,5 @@ pub mod ty;
 pub mod complete;
 
 pub type Int = num::BigInt;
+
+pub use chumsky;

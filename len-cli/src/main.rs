@@ -1,6 +1,6 @@
-use chumsky::{error::Rich, extra, Parser};
+use eyre::Result;
 use len::{
-    ast,
+    ast, chumsky,
     eval::RawScope,
     lexer::{lexer, Token},
 };
@@ -8,8 +8,22 @@ use std::io::{self, Write};
 use tracing::info;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
-fn main() {
-    setup_logging();
+fn main() -> Result<()> {
+    color_eyre::install()?;
+
+    let layer_fmt = tracing_subscriber::fmt::layer()
+        .with_writer(std::io::stderr)
+        .without_time()
+        .with_line_number(true)
+        .compact();
+
+    let layer_error = tracing_error::ErrorLayer::default();
+
+    tracing_subscriber::registry()
+        .with(EnvFilter::from_default_env())
+        .with(layer_error)
+        .with(layer_fmt)
+        .init();
 
     let mut stdout = io::stdout();
     let stdin = io::stdin();
@@ -31,7 +45,7 @@ fn main() {
         match exit {
             Ok(0) => {
                 info!("Goodbye");
-                return;
+                return Ok(());
             }
             err @ Err(_) => {
                 err.unwrap();
@@ -41,20 +55,4 @@ fn main() {
             }
         }
     }
-}
-
-fn setup_logging() {
-    let layer_fmt = tracing_subscriber::fmt::layer()
-        .with_writer(std::io::stderr)
-        .without_time()
-        .with_line_number(true)
-        .compact();
-
-    let layer_error = tracing_error::ErrorLayer::default();
-
-    tracing_subscriber::registry()
-        .with(EnvFilter::from_default_env())
-        .with(layer_error)
-        .with(layer_fmt)
-        .init();
 }

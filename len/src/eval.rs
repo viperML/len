@@ -1,7 +1,8 @@
 use chumsky::primitive::todo;
+use thiserror::Error;
 use tracing::{debug, info};
 
-use crate::ast::{self, Ast, Expr, Literal};
+use crate::ast::{self};
 use crate::Int;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
@@ -9,11 +10,11 @@ use std::{collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone)]
 pub struct Object {
-    ptr: Rc<ObjectRaw>,
+    ptr: Rc<RawObject>,
 }
 
 impl Deref for Object {
-    type Target = ObjectRaw;
+    type Target = RawObject;
 
     fn deref(&self) -> &Self::Target {
         &self.ptr
@@ -23,11 +24,11 @@ impl Deref for Object {
 impl Object {
     fn new_function<F>(func: F) -> Self
     where
-        F: Fn(Object) -> Object + 'static,
+        F: Fn(Object) -> ExprResult<Object> + 'static,
     {
         Object {
-            ptr: From::from(ObjectRaw::Function(Function {
-                value: Rc::new(func),
+            ptr: From::from(RawObject::Function(Function {
+                value: Box::from(func),
             })),
         }
     }
@@ -37,51 +38,45 @@ impl Object {
         I: Into<Int>,
     {
         Object {
-            ptr: From::from(ObjectRaw::Int(int.into())),
+            ptr: From::from(RawObject::Int(int.into())),
         }
     }
 
     fn new_string(input: String) -> Self {
         Object {
-            ptr: From::from(ObjectRaw::String(input)),
+            ptr: From::from(RawObject::String(input)),
         }
     }
 }
 
 #[derive(Debug)]
-pub enum ObjectRaw {
+pub enum RawObject {
     Int(Int),
     String(String),
     Function(Function),
     Product(HashMap<String, Object>),
 }
 
+
 pub struct Function {
-    value: Rc<dyn Fn(Object) -> Object>,
+    value: Box<dyn Fn(Object) -> ExprResult<Object>>,
 }
 
 impl fmt::Debug for Function {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "function@{:p}", self.value)
-        // f.debug_struct("Function").field("value", &self.value).finish()
+        write!(f, "function @ {:p}", self.value)
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum EvalError {
+#[derive(Debug, Clone, Error)]
+pub enum ExprError {
+    #[error("Type error")]
     TypeError,
+    #[error("Todo")]
     Todo,
 }
 
-impl Display for EvalError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(self, f)
-    }
-}
-
-impl Error for EvalError {}
-
-type EvalResult<T> = Result<T, EvalError>;
+type ExprResult<T> = Result<T, ExprError>;
 
 #[derive(Debug, Clone)]
 pub struct RawScope {
@@ -96,16 +91,14 @@ impl RawScope {
     fn std() -> Self {
         let mut bindings = HashMap::new();
 
-        bindings.insert(String::from("id"), Object::new_function(|x| x));
-
         bindings.insert(
             String::from("+"),
             Object::new_function(|x| {
                 let x = x.clone();
-                Object::new_function(move |y| match (&*x, &*y) {
-                    (ObjectRaw::Int(a), ObjectRaw::Int(b)) => Object::new_int(a + b),
+                Ok(Object::new_function(move |y| match (&*x, &*y) {
+                    (RawObject::Int(a), RawObject::Int(b)) => Ok(Object::new_int(a + b)),
                     _ => todo!(),
-                })
+                }))
             }),
         );
 
@@ -113,10 +106,10 @@ impl RawScope {
             String::from("-"),
             Object::new_function(|left| {
                 let left = left.clone();
-                Object::new_function(move |right| match (&*left, &*right) {
-                    (ObjectRaw::Int(a), ObjectRaw::Int(b)) => Object::new_int(a - b),
+                Ok(Object::new_function(move |right| match (&*left, &*right) {
+                    (RawObject::Int(a), RawObject::Int(b)) => Ok(Object::new_int(a - b)),
                     _ => todo!(),
-                })
+                }))
             }),
         );
 
@@ -124,10 +117,10 @@ impl RawScope {
             String::from("*"),
             Object::new_function(|left| {
                 let left = left.clone();
-                Object::new_function(move |right| match (&*left, &*right) {
-                    (ObjectRaw::Int(a), ObjectRaw::Int(b)) => Object::new_int(a * b),
+                Ok(Object::new_function(move |right| match (&*left, &*right) {
+                    (RawObject::Int(a), RawObject::Int(b)) => Ok(Object::new_int(a * b)),
                     _ => todo!(),
-                })
+                }))
             }),
         );
 
@@ -135,18 +128,17 @@ impl RawScope {
             String::from("$"),
             Object::new_function(|left| {
                 let left = left.clone();
-                Object::new_function(move |right| match &*left {
-                    ObjectRaw::Function(f) => (f.value)(right),
+                Ok(Object::new_function(move |right| match &*left {
+                    RawObject::Function(f) => (f.value)(right),
                     _ => todo!(),
-                })
+                }))
             }),
         );
 
         bindings.insert(
             String::from("inc"),
-            Object::new_function(|x| match &*x {
-                ObjectRaw::Int(i) => Object::new_int(i + 1),
-                _ => todo!(),
+            Object::new_function(|x| {
+                todo!()
             }),
         );
 
@@ -154,12 +146,12 @@ impl RawScope {
             String::from("get"),
             Object::new_function(|left| {
                 let left = left.clone();
-                Object::new_function(move |right| match (&*left, &*right) {
-                    (ObjectRaw::Product(p), ObjectRaw::String(s)) => {
-                        p.get(s).expect("Failed to get element").clone()
+                Ok(Object::new_function(move |right| match (&*left, &*right) {
+                    (RawObject::Product(p), RawObject::String(s)) => {
+                        Ok(p.get(s).expect("Failed to get element").clone())
                     }
                     _ => todo!(),
-                })
+                }))
             }),
         );
 
@@ -199,30 +191,27 @@ impl Deref for Scope {
     }
 }
 
-pub fn eval_expr(ast: Expr, scope: Scope) -> EvalResult<Object> {
+pub fn eval_expr(ast: ast::Expr, scope: Scope) -> ExprResult<Object> {
     match ast {
-        Expr::Literal(lit) => match lit {
-            Literal::Integer(x) => Ok(Object::new_int(x)),
-            Literal::String(x) => Ok(Object::new_string(x)),
-            _ => Err(EvalError::Todo),
+        ast::Expr::Literal(lit) => match lit {
+            ast::Literal::Integer(x) => Ok(Object::new_int(x)),
+            ast::Literal::String(x) => Ok(Object::new_string(x)),
+            _ => Err(ExprError::Todo),
         },
-        Expr::Identifier(ident) => Ok(scope.symbol_lookup(ident.name).unwrap()),
-        Expr::FunctionCall(call) => {
+        ast::Expr::Identifier(ident) => Ok(scope.symbol_lookup(ident.name).unwrap()),
+        ast::Expr::FunctionCall(call) => {
             let function = eval_expr(*call.function, scope.clone()).unwrap();
             let argument = eval_expr(*call.argument, scope.clone()).unwrap();
             match *function {
-                ObjectRaw::Function(ref f) => {
-                    let result = (f.value)(argument);
-                    Ok(result)
-                }
-                _ => Err(EvalError::TypeError),
+                RawObject::Function(ref f) => (f.value)(argument),
+                _ => Err(ExprError::TypeError),
             }
         }
-        Expr::Todo => todo!(),
-        Expr::Product(_) => todo!(),
-        Expr::Lambda(ast::Lambda { from, to }) => Ok({
+        ast::Expr::Todo => todo!(),
+        ast::Expr::Product(_) => todo!(),
+        ast::Expr::Lambda(ast::Lambda { from, to }) => {
             let parent = scope.clone();
-            Object::new_function(move |argument| {
+            Ok(Object::new_function(move |argument| {
                 let mut bindings = HashMap::new();
 
                 bindings.insert(from.name.clone(), argument);
@@ -232,21 +221,21 @@ pub fn eval_expr(ast: Expr, scope: Scope) -> EvalResult<Object> {
                     bindings,
                 });
 
-                eval_expr(*to.clone(), inner_scope).expect("FIXME")
-            })
-        }),
+                eval_expr(*to.clone(), inner_scope)
+            }))
+        }
         // _ => todo!(),
     }
 }
 
-pub fn eval(ast: Ast, scope: Scope) -> Option<Scope> {
+pub fn eval(ast: ast::Ast, scope: Scope) -> Option<Scope> {
     match ast {
-        Ast::Expr(expr) => {
+        ast::Ast::Expr(expr) => {
             let res = eval_expr(expr, scope.clone());
             info!("{:#?}", res);
             None
         }
-        Ast::Binding {
+        ast::Ast::Binding {
             lhs: ident,
             rhs: expr,
         } => {
@@ -262,7 +251,7 @@ pub fn eval(ast: Ast, scope: Scope) -> Option<Scope> {
                 bindings: new_bindings,
             })))
         }
-        Ast::Todo => todo!(),
+        ast::Ast::Todo => todo!(),
     }
 }
 
