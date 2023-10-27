@@ -1,3 +1,3 @@
 # len
 
-https://viperml.github.io/len/len/index.html
+Live demo: https://viperml.github.io/len
