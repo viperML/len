@@ -6,6 +6,9 @@
 /bin
 .crates.toml
 .crates2.json
+*.out.css
+node_modules
+dist
 
 # **/*.rs.bk
 # bin/

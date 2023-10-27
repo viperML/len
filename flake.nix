@@ -34,6 +34,7 @@
               just
               wasm-pack
               cargo-generate
+              nodejs
             ];
 
             # RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";

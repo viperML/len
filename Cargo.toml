@@ -8,3 +8,6 @@ members = [
 
 [profile.dev.package.backtrace]
 opt-level = 3
+
+[profile.release]
+package.len-web.opt-level = "s"

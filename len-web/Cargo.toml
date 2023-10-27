@@ -23,6 +23,3 @@ len = { version = "0.1.0", path = "../len" }
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
 
-[profile.release]
-# Tell `rustc` to optimize for small code size.
-opt-level = "s"

@@ -12,8 +12,11 @@ doc:
 insta:
     cargo insta test --delete-unreferenced-snapshots
 
+web := "./len-web"
+
 web:
-    wasm-pack build --target web ./len-web --release
-    rm -rvf _site
-    mkdir -pv _site
-    cp -vfr len-web/pkg len-web/index.html len-web/index.js _site
+    cd {{web}} && npm install && npx webpack --mode=production
+    cp -vr {{web}}/dist _site
+
+web-dev:
+    cd {{web}} && npx webpack-dev-server --open --mode development
