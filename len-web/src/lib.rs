@@ -1,29 +1,35 @@
 mod utils;
 
 use chumsky::extra;
-use len::chumsky::{self, prelude::Simple, Parser};
+use len::chumsky::{self, error::Rich, Parser};
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-extern "C" {
-    fn alert(s: &str);
+type Extra<'a, T> = extra::Err<Rich<'a, T>>;
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct EvalResult {
+    pub lexer: String,
+    pub ast: String,
 }
 
 #[wasm_bindgen]
-pub fn greet() {
-    alert("Hello, len-web!");
-}
+pub fn main(input: String) -> EvalResult {
+    let lexer_res = len::lexer::lexer::<Extra<_>>().parse(&input);
 
-#[wasm_bindgen]
-pub fn inc(input: i32) -> i32 {
-    input + 1
-}
+    let lexer_res_str = format!("{:#?}", lexer_res);
 
-#[wasm_bindgen]
-pub fn lexer(input: &str) -> String {
-    let p = len::lexer::lexer::<extra::Err<Simple<_>>>();
+    let prev = lexer_res
+        .into_output()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|t| t.kind)
+        .collect::<Vec<_>>();
 
-    let res = p.parse(input);
+    let ast_res = len::ast::ast_parser::<Extra<_>>().parse(&prev);
+    let ast_res_str = format!("{:#?}", ast_res);
 
-    format!("{:#?}", res)
+    EvalResult {
+        lexer: lexer_res_str,
+        ast: ast_res_str,
+    }
 }

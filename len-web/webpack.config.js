@@ -5,8 +5,12 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 const dist = path.resolve(__dirname, "dist");
 
-module.exports = {
+/**
+ * @type {import('webpack').Configuration}
+ */
+const config = {
   mode: "production",
+  target: 'web',
   entry: {
     index: "./src/index.js",
   },
@@ -32,6 +36,9 @@ module.exports = {
     syncWebAssembly: true,
     // outputModule: true,
   },
+  watchOptions: {
+
+  },
   module: {
     rules: [
       {
@@ -41,3 +48,5 @@ module.exports = {
     ],
   },
 };
+
+module.exports = config
