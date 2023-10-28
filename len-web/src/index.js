@@ -1,7 +1,8 @@
 // import init, { inc, lexer } from "../pkg/index.js";
-import * as crate from "../pkg/index.js";
 import { initFlowbite } from "flowbite";
-import "./style.css" assert { type: 'css' };
+
+import * as crate from "../pkg/index";
+import "./style.css";
 
 async function main() {
   const input = document.getElementById("input").value;
@@ -18,7 +19,7 @@ async function main() {
 
 // Execute on each keypress of the text input
 document.getElementById("input").addEventListener("input", () => {
-    main();
+  main();
 });
 
 initFlowbite();

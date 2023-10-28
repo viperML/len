@@ -10,7 +10,7 @@ const dist = path.resolve(__dirname, "dist");
  */
 const config = {
   mode: "production",
-  target: 'web',
+  target: "web",
   entry: {
     index: "./src/index.js",
   },
@@ -49,4 +49,4 @@ const config = {
   },
 };
 
-module.exports = config
+module.exports = config;

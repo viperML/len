@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    body {
+        @apply dark:text-white;
+    }
+}
+
+@layer components {
+    .accordion-header {
+        @apply flex w-full items-center justify-between p-5 font-medium text-left rounded-t-lg dark:bg-stone-700 bg-stone-300;
+    }
+
+    .accordion-content {
+        @apply p-5 border-x-2 border-b-2 dark:border-stone-700 border-stone-300 font-mono text-sm overflow-x-auto;
+    }
+}

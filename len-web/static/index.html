@@ -1,135 +1,74 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>len-repl</title>
-    <script src="index.js" type="module"></script>
-    <link rel="stylesheet" href="style.css" />
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-    <!-- <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.0.0/flowbite.min.css"
-      rel="stylesheet"
-    /> -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-  </head>
 
-  <body
-    class="min-h-screen bg-gradient-to-b from-gray-100 to-gray-300 dark:from-stone-800 dark:to-stone-900"
-  >
-    <nav name="bg-black border border-black">
-      <div
-        class="bg-stone-900 max-w-screen flex flex-wrap items-center justify-between mx-auto p-4"
-      >
-        <span class="text-2xl font-semibold text-white">len-repl</span>
-        <button
-          class="bg-white py-1 px-3 rounded hover:bg-stone-300 transition-colors"
-        >
-          <a
-            href="https://github.com/viperML/len"
-            class="text-xl dark:text-black"
-            target="_blank"
-            >GitHub</a
-          >
-        </button>
-      </div>
-    </nav>
+<head>
+  <meta charset="utf-8" />
+  <title>len-repl</title>
+  <script src="index.js" type="module"></script>
+  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+</head>
 
-    <main
-      class="md:container mx-auto sm:p-5 md:p-10 flex flex-col sm:space-y-2 md:space-y-5"
-    >
-      <div
-        class="border dark:border-black w-30 p-5 rounded-lg flex flex-col space-y-5 dark:bg-stone-900"
-      >
-        <textarea
-          id="input"
-          class="border-none md:min-h-[15rem] sm:min-h-[10rem] text-left text-top p-5 bg-inherit dark:text-white focus:ring-0"
-          placeholder="Write code here"
-        ></textarea>
+<body class="min-h-screen bg-gradient-to-b from-gray-100 to-gray-300 dark:from-stone-800 dark:to-stone-900">
+  <nav class="bg-stone-900 max-w-screen flex flex-wrap items-center justify-between mx-auto p-4 border border-black">
+    <span class="text-2xl font-semibold text-white">len-repl</span>
+    <button class="bg-white py-1 px-3 rounded hover:bg-stone-300 transition-colors text-xl" onclick="window.open('https://github.com/viperML/len', 'blank')">
+      Source code
+    </button>
+  </nav>
 
-        <div
-          data-accordion="open"
-          class="dark:text-white flex flex-col gap-5"
-        >
-          <div class="w-full">
-            <button
-              type="button"
-              class="flex items-center justify-between w-full p-5 font-medium text-left rounded-t-lg dark:bg-stone-700"
-              data-accordion-target="#accordion-collapse-lexer"
-              aria-expanded="true"
-              aria-controls="accordion-collapse-lexer"
-            >
-              <span>Lexer dump</span>
-              <svg
-                data-accordion-icon
-                class="w-3 h-3 rotate-180 shrink-0"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 10 6"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5 5 1 1 5"
-                />
-              </svg>
-            </button>
-            <div
-              id="accordion-collapse-lexer"
-              class="hidden"
-              aria-labelledby="accordion-collapse-lexer"
-            >
-              <div class="p-5 border-2 dark:border-stone-700 font-mono text-sm">
-                <pre class="" name="lexer">Loading...</pre>
-              </div>
+  <main class="container mx-auto p-1 sm:p-10">
+    <div
+      class="border dark:border-black w-30 p-5 rounded-lg flex flex-col space-y-5 dark:bg-stone-900 border-gray-400 bg-stone-100">
+      <textarea id="input"
+        class="border-none md:min-h-[15rem] sm:min-h-[10rem] text-left text-top p-5 bg-inherit focus:ring-0 font-mono"
+        placeholder="Write code here"></textarea>
+
+      <div data-accordion="open" class="flex flex-col gap-5">
+        <div>
+          <button type="button" class="accordion-header" data-accordion-target="#accordion-collapse-lexer"
+            aria-expanded="true" aria-controls="accordion-collapse-lexer">
+            <span>Lexer dump</span>
+            <svg data-accordion-icon class="w-3 h-3 rotate-180 shrink-0" aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5 5 1 1 5" />
+            </svg>
+          </button>
+          <div id="accordion-collapse-lexer" class="hidden" aria-labelledby="accordion-collapse-lexer">
+            <div class="accordion-content">
+              <pre class="" name="lexer">Loading...</pre>
             </div>
           </div>
+        </div>
 
-          <div class="w-full">
-            <button
-              type="button"
-              class="flex items-center justify-between w-full p-5 font-medium text-left rounded-t-lg dark:bg-stone-700"
-              data-accordion-target="#accordion-collapse-ast"
-              aria-expanded="true"
-              aria-controls="accordion-collapse-ast"
-            >
-              <span>Ast dump</span>
-              <svg
-                data-accordion-icon
-                class="w-3 h-3 rotate-180 shrink-0"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 10 6"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5 5 1 1 5"
-                />
-              </svg>
-            </button>
-            <div
-              id="accordion-collapse-ast"
-              aria-labelledby="accordion-collapse-ast"
-              class="hidden"
-            >
-              <div class="p-5 border-2 dark:border-stone-700 font-mono text-sm">
-                <pre class="" name="ast">Loading...</pre>
-              </div>
+        <div>
+          <button type="button" class="accordion-header" data-accordion-target="#accordion-collapse-ast"
+            aria-expanded="true" aria-controls="accordion-collapse-ast">
+            <span>Ast dump</span>
+            <svg data-accordion-icon class="w-3 h-3 rotate-180 shrink-0" aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5 5 1 1 5" />
+            </svg>
+          </button>
+          <div id="accordion-collapse-ast" aria-labelledby="accordion-collapse-ast" class="hidden">
+            <div class="accordion-content">
+              <pre class="" name="ast">Loading...</pre>
             </div>
           </div>
         </div>
       </div>
-    </main>
 
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.0.0/flowbite.min.js"></script> -->
-  </body>
+      <div>
+        <h3 class="dark:text-stone-400 text-stone-600">How does it work in the web?</h3>
+        <p class="dark:text-stone-300">The rust library is cross-compiled into Web Assembly. A simple javascript shim loads the WASM module
+          , and passes the text as input and displays the result.
+          There is no server involved, as the rust library is being ran in your browser.
+        </p>
+      </div>
+    </div>
+  </main>
+</body>
+
 </html>
