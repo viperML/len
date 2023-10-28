@@ -1,10 +1,10 @@
-use chumsky::extra::ParserExtra;
-use chumsky::input::StrInput;
-
-use chumsky::text::Char;
-
 use crate::Int;
+use chumsky::extra::ParserExtra;
+use chumsky::input::SpannedInput;
+use chumsky::input::StrInput;
+use chumsky::input::WithContext;
 use chumsky::prelude::*;
+use chumsky::text::Char;
 use chumsky::Parser;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -46,6 +46,35 @@ fn symbol<'a, I: StrInput<'a, C>, C: Char, E: ParserExtra<'a, I>>(
 
 pub type LexerI<'a> = &'a str;
 pub type LexerO<'a> = Vec<Token<'a>>;
+
+#[derive(Debug, Clone, Default)]
+pub struct SpanContext {
+    source: SpanSource,
+}
+
+#[derive(Debug, Clone, Default)]
+pub enum SpanSource {
+    #[default]
+    Unknown,
+    File(String)
+}
+
+type Span = chumsky::span::SimpleSpan<usize, SpanContext>;
+type Spanned<T> = (Span, T);
+
+#[must_use]
+pub fn lexer_new<'s>() -> impl Parser<'s, WithContext<Span, &'s str>, Vec<Spanned<TokenKind<'s>>>> {
+    let number = text::int(10)
+        .map(str::parse)
+        .unwrapped()
+        .map(TokenKind::Number);
+
+    number
+        .padded()
+        .map_with(|elem, extra| (extra.span(), elem))
+        .repeated()
+        .collect()
+}
 
 #[must_use]
 pub fn lexer<'s, E: ParserExtra<'s, LexerI<'s>>>() -> impl Parser<'s, LexerI<'s>, LexerO<'s>, E> {
@@ -103,6 +132,7 @@ mod tests {
     use chumsky::error;
     use insta::assert_debug_snapshot;
     use rstest::rstest;
+    use tracing::debug;
     use tracing_test::traced_test;
 
     type TestExtra = extra::Err<error::Cheap>;
@@ -153,5 +183,21 @@ mod tests {
         let p = lexer::<TestExtra>().padded();
 
         assert_debug_snapshot!(input.0, (input.0, input.1, p.parse(input.1)));
+    }
+
+    #[traced_test]
+    #[test]
+    fn test_lexer_new() {
+        let p = lexer_new();
+        let res = p.parse("2 123 12".with_context(Default::default()));
+        debug!(?res);
+
+        for r in res.into_output().unwrap() {
+            // let x = r.1.context();
+            let c = r.0.context();
+            debug!(?r, ?c);
+        }
+
+        todo!();
     }
 }
