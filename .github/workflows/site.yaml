@@ -25,7 +25,7 @@ jobs:
 
       - name: Build
         run: |
-          nix develop -c just web
+          nix develop -c just web-build
 
       - name: Fix permissions
         run: |

@@ -14,8 +14,8 @@ insta:
 
 web := "./len-web"
 
-web:
-    cd {{web}} && npm install && npx webpack --mode=production
+web-build:
+    cd {{web}} && npm install --omit optional && npx webpack --mode=production
     cp -vr {{web}}/dist _site
 
 web-dev:

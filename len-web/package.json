@@ -8,20 +8,23 @@
     "@wasm-tool/wasm-pack-plugin": "^1.7.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
-    "eslint": "^8.52.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.29.0",
     "mini-css-extract-plugin": "^2.7.6",
-    "postcss-cli": "^10.1.0",
     "postcss-loader": "^7.3.3",
-    "prettier": "^3.0.3",
     "style-loader": "^3.3.3",
     "tailwindcss": "^3.3.5",
-    "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^4.15.1"
+    "webpack": "^5.89.0"
   },
   "dependencies": {
     "flowbite": "^2.0.0"
+  },
+  "optionalDependencies": {
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint": "^8.52.0",
+    "postcss-cli": "^10.1.0",
+    "prettier": "^3.0.3",
+    "webpack-dev-server": "^4.15.1"
   }
 }
+
