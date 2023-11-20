@@ -35,6 +35,8 @@
               wasm-pack
               cargo-generate
               nodejs
+              wasm-bindgen-cli
+              binaryen
             ];
 
             # RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";
